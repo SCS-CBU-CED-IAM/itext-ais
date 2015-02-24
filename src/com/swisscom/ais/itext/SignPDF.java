@@ -98,6 +98,11 @@ public class SignPDF {
      * Language of the message which will be send to mobile phone with mobile id. Needed for signing with mobile id.
      */
     String language = null;
+    
+    /**
+     * Mobile ID Serial Number
+     */
+    String serialnumber = null;
 
     /**
      * Path for properties file. Needed if standard path will not be used.
@@ -141,7 +146,7 @@ public class SignPDF {
 
             //start signing
             Soap dss_soap = new Soap(verboseMode, debugMode, propertyFilePath);
-            dss_soap.sign(signature, pdfToSign, signedPDF, signingReason, signingLocation, signingContact, certificationLevel, distinguishedName, msisdn, msg, language);
+            dss_soap.sign(signature, pdfToSign, signedPDF, signingReason, signingLocation, signingContact, certificationLevel, distinguishedName, msisdn, msg, language, serialnumber);
         } catch (Exception e) {
             if (debugMode || verboseMode) {
                 printError(e.getMessage().replaceAll("java.lang.Exception", "").length() > 0 ? e.getMessage() : "");
@@ -161,71 +166,85 @@ public class SignPDF {
     	if (error != null && (debugMode || verboseMode)) {
     		printError(error);
     	}
-        System.out.println("\nUsage: com.swisscom.ais.itext.SignPDF [OPTIONS]");
-        System.out.println();
-        System.out.println("OPTIONS");
-        System.out.println();
-        System.out.println("  [mandatory]");
-        System.out.println("  -type=VALUE       - signature type");
-        System.out.println("                       supported values:");
-        System.out.println("                       - timestamp (add timestamp only)");
-        System.out.println("                       - sign      (add cms signature incl. timestamp)");
-        System.out.println("  -infile=VALUE     - input filename of the pdf to be signed");
-        System.out.println("  -outfile=VALUE    - output filename for the signed pdf");
-        System.out.println();
-        System.out.println("  [optional]");
-        System.out.println("  -v                - verbose output");
-        System.out.println("  -vv               - more verbose output");
-        System.out.println("  -config=VALUE     - custom path to properties file, overwrites default path");
-        System.out.println("  -reason=VALUE     - signing reason");
-        System.out.println("  -location=VALUE   - signing location");
-        System.out.println("  -contact=VALUE    - signing contact");
-        System.out.println("  -certlevel=VALUE  - certify the pdf, at most one certification per pdf is allowed");
-        System.out.println("                       supported values:");
-        System.out.println("                       - 1 (no changes allowed)");
-        System.out.println("                       - 2 (form filling and further signing allowed)");
-        System.out.println("                       - 3 (form filling, annotations and further signing allowed)");    
-        System.out.println("  -dn=VALUE         - distinguished name, for personal on demand certificate signing");
-        System.out.println("                       supported attributes, separated by commas:");
-        System.out.println("                       [mandatory]");
-        System.out.println("                       - cn / commonname ");
-        System.out.println("                       - c / countryname");
-        System.out.println("                       [optional]");
-        System.out.println("                       - emailaddress");
-        System.out.println("                       - givenname");
-        System.out.println("                       - l / localityname");
-        System.out.println("                       - ou / organizationalunitname");
-        System.out.println("                       - o / organizationname");
-        System.out.println("                       - serialnumber");
-        System.out.println("                       - st / stateorprovincename");
-        System.out.println("                       - sn / surname");
-        System.out.println("  -msisdn=VALUE     - mobileid step up phone number            (requires -dn -msg -lang)");
-        System.out.println("  -msg=VALUE        - mobileid step up message to be displayed (requires -dn -msisdn -lang)");
-        System.out.println("                      A placeholder #TRANSID# may be used anywhere in the message to include a unique transaction id.");
-        System.out.println("  -lang=VALUE       - mobileid step up language                (requires -dn -msisdn -msg)");
-        System.out.println("                       supported values:");
-        System.out.println("                       - en (english)");
-        System.out.println("                       - de (deutsch)");
-        System.out.println("                       - fr (français)");
-        System.out.println("                       - it (italiano)");
-        System.out.println();
-        System.out.println("EXAMPLES");
-        System.out.println();
-        System.out.println("  [timestamp]");
-        System.out.println("    java com.swisscom.ais.itext.SignPDF -type=timestamp -infile=sample.pdf -outfile=signed.pdf");
-        System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=timestamp -infile=sample.pdf -outfile=signed.pdf");
-        System.out.println();
-        System.out.println("  [sign with static certificate]");
-        System.out.println("    java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf");
-        System.out.println("    java com.swisscom.ais.itext.SignPDF -v -config=/tmp/signpdf.properties -type=sign -infile=sample.pdf -outfile=signed.pdf -reason=Approved -location=Berne -contact=alice@acme.com");
-        System.out.println();
-        System.out.println("  [sign with on demand certificate]");
-        System.out.println("    java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,o=ACME,c=CH'");
-        System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,o=ACME,c=CH' -certlevel=1");
-        System.out.println();
-        System.out.println("  [sign with OnDemand certificate and Mobile ID step up]");
-        System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,o=ACME,c=CH' -msisdn=41792080350 -msg='acme.com: Sign the PDF? (#TRANSID#)' -lang=en");
-        System.exit(1);
+    	System.out.println("\nUsage: com.swisscom.ais.itext.SignPDF [OPTIONS]");
+    	System.out.println();
+    	System.out.println("OPTIONS");
+    	System.out.println();
+    	System.out.println("  ### TIMESTAMP SIGNATURES ###");
+    	System.out.println("  -type=timestamp         - Signature Type");
+    	System.out.println("  -infile=VALUE           - Source Filename, PDF to be signed");
+    	System.out.println("  -outfile=VALUE          - Target Filename, signed PDF");
+    	System.out.println();  
+    	System.out.println("  ### SIGNATURES WITH STATIC CERTIFICATES ###");
+    	System.out.println("  -type=sign              - Signature Type");
+    	System.out.println("  -infile=VALUE           - Source Filename, PDF to be signed");
+    	System.out.println("  -outfile=VALUE          - Target Filename, signed PDF");
+    	System.out.println();
+    	System.out.println("  ### SIGNATURES WITH ON DEMAND CERTIFICATES ###");
+    	System.out.println("  -type=sign              - Signature Type");
+    	System.out.println("  -infile=VALUE           - Source Filename, PDF to be signed");
+    	System.out.println("  -outfile=VALUE          - Target Filename, signed PDF");
+    	System.out.println("  -dn=VALUE               - Subject Distinguished Name for the On Demand Certificate");
+    	System.out.println("                            Supported attributes, separated by a comma:");
+    	System.out.println("                            [mandatory]");
+    	System.out.println("                             - cn or CommonName");
+    	System.out.println("                             - c or CountryName");
+    	System.out.println("                            [optional]");
+    	System.out.println("                             - EmailAddress");
+    	System.out.println("                             - FivenName");
+    	System.out.println("                             - l or LocalityName");
+    	System.out.println("                             - ou or OrganizationalUnitName");
+    	System.out.println("                             - o or OrganizationName");
+    	System.out.println("                             - SerialNumber");
+    	System.out.println("                             - st or StateOrProvinceName");
+    	System.out.println("                             - sn or Surname");
+    	System.out.println();
+    	System.out.println("  ### MOBILE ID AUTHORIZATION ###");
+    	System.out.println("  Only applicable to Signatures with On Demand Certificates:");
+    	System.out.println("  -midMsisdn=VALUE        - Phone number (requires -dn -midMsg -midLang)");
+    	System.out.println("  -midMsg=VALUE           - Message to be displayed (requires -dn -midMsisdn -midLang)");
+    	System.out.println("                            A placeholder #TRANSID# may be used anywhere in the message to include a unique transaction id");
+    	System.out.println("  -midLang=VALUE          - Language of the message to be displayed (requires -dn -midMsisdn -midMsg)");
+    	System.out.println("                            supported values:");
+    	System.out.println("                             - en (english)");
+    	System.out.println("                             - de (deutsch)");
+    	System.out.println("                             - fr (français)");
+    	System.out.println("                             - it (italiano)");
+    	System.out.println("  -midSerialNumber=VALUE  - Optional: Verify the Mobile ID SerialNumber (16 chars; starting with 'MIDCHE')");
+    	System.out.println("                            Document will only be signed if it matched the actual Mobile ID SerialNumber");
+    	System.out.println();
+    	System.out.println("  ### ADOBE PDF SETTINGS ###");
+    	System.out.println("  -reason=VALUE           - Signing Reason");
+    	System.out.println("  -location=VALUE         - Signing Location");
+    	System.out.println("  -contact=VALUE          - Signing Contact");
+    	System.out.println("  -certlevel=VALUE        - Certify the PDF, at most one certification per PDF is allowed");
+    	System.out.println("                             Supported values:");
+    	System.out.println("                             - 1 (no further changes allowed)");
+    	System.out.println("                             - 2 (form filling and further signing allowed)");
+    	System.out.println("                             - 3 (form filling, annotations and further signing allowed)");
+    	System.out.println();
+    	System.out.println("  ### DEBUG OPTIONS ###");
+    	System.out.println("  -v                      - Verbose output");
+    	System.out.println("  -vv                     - More Verbose output");
+    	System.out.println("  -config=VALUE           - Custom path to the properties file (signpdf.properties)");
+    	System.out.println();                           
+    	System.out.println("EXAMPLES");
+    	System.out.println();
+    	System.out.println("  [timestamp]");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -type=timestamp -infile=sample.pdf -outfile=signed.pdf");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=timestamp -infile=sample.pdf -outfile=signed.pdf");
+    	System.out.println();
+    	System.out.println("  [sign with static certificate]");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -config=/tmp/signpdf.properties -type=sign -infile=sample.pdf -outfile=signed.pdf -reason=Approved -location=Berne -contact=alice@acme.com");
+    	System.out.println();
+    	System.out.println("  [sign with on demand certificate]");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH'");
+    	System.out.println();
+    	System.out.println("  [sign with on demand certificate and mobile id authorization]");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en -midSerialNumber=MIDCHE2EG8NAWUB3");
+    	System.exit(1);
     }
 
     /**
@@ -315,14 +334,16 @@ public class SignPDF {
     			}
             } else if (param.contains("-dn=")) {
                 distinguishedName = args[i].substring(args[i].indexOf("=") + 1).trim();
-            } else if (param.contains("-msisdn=")) {
+            } else if (param.contains("-midmsisdn=")) {
                 msisdn = args[i].substring(args[i].indexOf("=") + 1).trim();
-            } else if (param.contains("-msg=")) {
+            } else if (param.contains("-midmsg=")) {
                 msg = args[i].substring(args[i].indexOf("=") + 1).trim();
                 String transId = getNewTransactionId();
                 msg = msg.replaceAll("#TRANSID#", transId);
-            } else if (param.contains("-lang=")) {
+            } else if (param.contains("-midlang=")) {
                 language = args[i].substring(args[i].indexOf("=") + 1).trim();
+            } else if (param.contains("-midserialnumber=")) {
+            	serialnumber = args[i].substring(args[i].indexOf("=") + 1).trim();
             } else if (param.contains("-config=")) {
                 propertyFilePath = args[i].substring(args[i].indexOf("=") + 1).trim();
                 File propertyFile = new File(propertyFilePath);

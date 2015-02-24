@@ -176,7 +176,7 @@ public class Soap {
     public void sign(@Nonnull Include.Signature signatureType, @Nonnull String fileIn, @Nonnull String fileOut,
                      @Nullable String signingReason, @Nullable String signingLocation, @Nullable String signingContact,
                      @Nullable int certificationLevel, @Nullable String distinguishedName, @Nullable String msisdn, 
-                     @Nullable String msg, @Nullable String language)
+                     @Nullable String msg, @Nullable String language, @Nullable String serialnumber)
             throws Exception {
 
         Include.HashAlgorithm hashAlgo = Include.HashAlgorithm.valueOf(properties.getProperty("DIGEST_METHOD").trim().toUpperCase());
@@ -201,7 +201,7 @@ public class Soap {
                 // Add 3 Minutes to move signing time within the OnDemand Certificate Validity
                 // This is only relevant in case the signature does not include a timestamp
                 signingTime.add(Calendar.MINUTE, 3); 
-                signDocumentOnDemandCertMobileId(new PDF[]{pdf}, signingTime, hashAlgo, _url, claimedIdentity, distinguishedName, msisdn, msg, language, requestId);
+                signDocumentOnDemandCertMobileId(new PDF[]{pdf}, signingTime, hashAlgo, _url, claimedIdentity, distinguishedName, msisdn, msg, language, serialnumber, requestId);
             } else if (signatureType.equals(Include.Signature.ONDEMAND)) {
                 if (_debugMode) {
                     System.out.println("Going to sign with ondemand");
@@ -249,7 +249,7 @@ public class Soap {
     private void signDocumentOnDemandCertMobileId(@Nonnull PDF pdfs[], @Nonnull Calendar signDate, @Nonnull Include.HashAlgorithm hashAlgo,
                                                   @Nonnull String serverURI, @Nonnull String claimedIdentity,
                                                   @Nonnull String distinguishedName, @Nonnull String phoneNumber, @Nonnull String certReqMsg,
-                                                  @Nonnull String certReqMsgLang, String requestId) throws Exception {
+                                                  @Nonnull String certReqMsgLang, @Nonnull String certReqSerialNumber, String requestId) throws Exception {
         String[] additionalProfiles;
 
         if (pdfs.length > 1) {
@@ -270,7 +270,7 @@ public class Soap {
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), true,
                 pdfHash, additionalProfiles,
                 claimedIdentity, Include.SignatureType.CMS.getSignatureType(), distinguishedName, _MOBILE_ID_TYPE, phoneNumber,
-                certReqMsg, certReqMsgLang, null, requestId);
+                certReqMsg, certReqMsgLang, certReqSerialNumber, null, requestId);
 
         signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "Base64Signature");
 
@@ -311,7 +311,7 @@ public class Soap {
 
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), true,
                 pdfHash, additionalProfiles,
-                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), distinguishedName, null, null, null, null, null, requestId);
+                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), distinguishedName, null, null, null, null, null, null, requestId);
 
         signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "Base64Signature");
     }
@@ -346,7 +346,7 @@ public class Soap {
 
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), false,
                 pdfHash, additionalProfiles,
-                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), null, null, null, null, null, null, requestId);
+                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), null, null, null, null, null, null, null, requestId);
 
         signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "Base64Signature");
     }
@@ -386,7 +386,7 @@ public class Soap {
 
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), false,
                 pdfHash, additionalProfiles, claimedIdentity, signatureType.getSignatureType(),
-                null, null, null, null, null, null, requestId);
+                null, null, null, null, null, null, null, requestId);
 
         signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "RFC3161TimeStampToken");
     }
@@ -607,7 +607,7 @@ public class Soap {
                                              String[] additionalProfiles, String claimedIdentity,
                                              @Nonnull String signatureType, String distinguishedName,
                                              String mobileIdType, String phoneNumber, String certReqMsg, String certReqMsgLang,
-                                             String responseId, String requestId) throws SOAPException, IOException {
+                                             String certReqSerialNumber, String responseId, String requestId) throws SOAPException, IOException {
 
         MessageFactory messageFactory = MessageFactory.newInstance();
         SOAPMessage soapMessage = messageFactory.createMessage();
@@ -688,6 +688,10 @@ public class Soap {
                             certReqMsgElement.addTextNode(certReqMsg);
                             SOAPElement certReqMsgLangElement = mobileIdElement.addChildElement("Language", "sc");
                             certReqMsgLangElement.addTextNode(certReqMsgLang);
+                            if (certReqSerialNumber != null) {
+                            	SOAPElement certReqMsgSerialNumberElement = mobileIdElement.addChildElement("SerialNumber", "sc");
+                            	certReqMsgSerialNumberElement.addTextNode(certReqSerialNumber);
+                            }
                         }
                     }
                 }
