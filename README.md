@@ -10,49 +10,63 @@ Usage: com.swisscom.ais.itext.SignPDF [OPTIONS]
 
 OPTIONS
 
-  [mandatory]
-  -type=VALUE       - signature type
-                       supported values:
-                       - timestamp (add timestamp only)
-                       - sign      (add cms signature incl. timestamp)
-  -infile=VALUE     - input filename of the pdf to be signed
-  -outfile=VALUE    - output filename for the signed pdf
+  ### TIMESTAMP SIGNATURES ###
+  -type=timestamp         - Signature Type
+  -infile=VALUE           - Source Filename, PDF to be signed
+  -outfile=VALUE          - Target Filename, signed PDF
 
-  [optional]
-  -v                - verbose output
-  -vv               - more verbose output
-  -config=VALUE     - custom path to properties file, overwrites default path
-  -reason=VALUE     - signing reason
-  -location=VALUE   - signing location
-  -contact=VALUE    - signing contact
-  -certlevel=VALUE  - certify the pdf, at most one certification per pdf is allowed
-                       supported values:
-                       - 1 (no changes allowed)
-                       - 2 (form filling and further signing allowed)
-                       - 3 (form filling, annotations and further signing allowed)
-  -dn=VALUE         - distinguished name, for personal on demand certificate signing
-                       supported attributes, separated by commas:
-                       [mandatory]
-                       - cn / commonname 
-                       - c / countryname
-                       [optional]
-                       - emailaddress
-                       - givenname
-                       - l / localityname
-                       - ou / organizationalunitname
-                       - o / organizationname
-                       - serialnumber
-                       - st / stateorprovincename
-                       - sn / surname
-  -msisdn=VALUE     - mobileid step up phone number            (requires -dn -msg -lang)
-  -msg=VALUE        - mobileid step up message to be displayed (requires -dn -msisdn -lang)
-                      A placeholder #TRANSID# may be used anywhere in the message to include a unique transaction id.
-  -lang=VALUE       - mobileid step up language                (requires -dn -msisdn -msg)
-                       supported values:
-                       - en (english)
-                       - de (deutsch)
-                       - fr (français)
-                       - it (italiano)
+  ### SIGNATURES WITH STATIC CERTIFICATES ###
+  -type=sign              - Signature Type
+  -infile=VALUE           - Source Filename, PDF to be signed
+  -outfile=VALUE          - Target Filename, signed PDF
+
+  ### SIGNATURES WITH ON DEMAND CERTIFICATES ###
+  -type=sign              - Signature Type
+  -infile=VALUE           - Source Filename, PDF to be signed
+  -outfile=VALUE          - Target Filename, signed PDF
+  -dn=VALUE               - Subject Distinguished Name for the On Demand Certificate
+                            Supported attributes, separated by a comma:
+                            [mandatory]
+                             - cn or CommonName
+                             - c or CountryName
+                            [optional]
+                             - EmailAddress
+                             - FivenName
+                             - l or LocalityName
+                             - ou or OrganizationalUnitName
+                             - o or OrganizationName
+                             - SerialNumber
+                             - st or StateOrProvinceName
+                             - sn or Surname
+
+  ### MOBILE ID AUTHORIZATION ###
+  Only applicable to Signatures with On Demand Certificates:
+  -midMsisdn=VALUE        - Phone number (requires -dn -midMsg -midLang)
+  -midMsg=VALUE           - Message to be displayed (requires -dn -midMsisdn -midLang)
+                            A placeholder #TRANSID# may be used anywhere in the message to include a unique transaction id
+  -midLang=VALUE          - Language of the message to be displayed (requires -dn -midMsisdn -midMsg)
+                            supported values:
+                             - en (english)
+                             - de (deutsch)
+                             - fr (français)
+                             - it (italiano)
+  -midSerialNumber=VALUE  - Optional: Verify the Mobile ID SerialNumber (16 chars; starting with 'MIDCHE')
+                            Document will only be signed if it matched the actual Mobile ID SerialNumber
+
+  ### ADOBE PDF SETTINGS ###
+  -reason=VALUE           - Signing Reason
+  -location=VALUE         - Signing Location
+  -contact=VALUE          - Signing Contact
+  -certlevel=VALUE        - Certify the PDF, at most one certification per PDF is allowed
+                             Supported values:
+                             - 1 (no further changes allowed)
+                             - 2 (form filling and further signing allowed)
+                             - 3 (form filling, annotations and further signing allowed)
+
+  ### DEBUG OPTIONS ###
+  -v                      - Verbose output
+  -vv                     - More Verbose output
+  -config=VALUE           - Custom path to the properties file (signpdf.properties)
 
 EXAMPLES
 
@@ -65,11 +79,11 @@ EXAMPLES
     java com.swisscom.ais.itext.SignPDF -v -config=/tmp/signpdf.properties -type=sign -infile=sample.pdf -outfile=signed.pdf -reason=Approved -location=Berne -contact=alice@acme.com
 
   [sign with on demand certificate]
-    java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,o=ACME,c=CH'
-    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,o=ACME,c=CH' -certlevel=1
+    java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH'
 
-  [sign with OnDemand certificate and Mobile ID step up]
-    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,o=ACME,c=CH' -msisdn=41792080350 -msg='acme.com: Sign the PDF? (#TRANSID#)' -lang=en
+  [sign with on demand certificate and mobile id authorization]
+    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en
+    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en -midSerialNumber=MIDCHE2EG8NAWUB3
 ```
 
 #### Dependencies
@@ -94,12 +108,12 @@ bcpkix-jdk15on-150.jar has been successfully tested
 
 The following placeholder will be used in this README (see sections below)
 ```
-<JAR>   = Path to the ./jar subfolder containing the latest Java Archive, e.g. ./AIS/itext/jar
-<SRC>   = Path to the ./src subfolder containing the *.java source files, e.g. ./AIS/itext/src/swisscom/com/ais/itext
-<LIB>   = Path to the ./lib subfolder containing the libraries, e.g. ./AIS/itext/lib
-<CLASS> = Path to the directory where class files will be created, e.g. ./AIS/itext/class
-<CFG>   = Path to the signpdf.properties file, e.g. ./AIS/itext/signpdf.properties
-<DOC>   = Path to the ./doc subfolder containing the JavaDoc, e.g. ./AIS/itext/doc
+<JAR>   = Path to the ./jar subfolder containing the latest Java Archive
+<SRC>   = Path to the ./src subfolder containing the *.java source files
+<LIB>   = Path to the ./lib subfolder containing the libraries
+<CLASS> = Path to the directory where class files will be created
+<CFG>   = Path to the signpdf.properties file
+<DOC>   = Path to the ./doc subfolder containing the JavaDoc
 ```
 
 #### Configuration
