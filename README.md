@@ -10,20 +10,17 @@ Usage: com.swisscom.ais.itext.SignPDF [OPTIONS]
 
 OPTIONS
 
-  ### TIMESTAMP SIGNATURES ###
-  -type=timestamp         - Signature Type
   -infile=VALUE           - Source Filename, PDF to be signed
   -outfile=VALUE          - Target Filename, signed PDF
+
+  ### TIMESTAMP SIGNATURES ###
+  -type=timestamp         - Signature Type RFC 3161
 
   ### SIGNATURES WITH STATIC CERTIFICATES ###
-  -type=sign              - Signature Type
-  -infile=VALUE           - Source Filename, PDF to be signed
-  -outfile=VALUE          - Target Filename, signed PDF
+  -type=sign              - Signature Type RFC 3369
 
   ### SIGNATURES WITH ON DEMAND CERTIFICATES ###
-  -type=sign              - Signature Type
-  -infile=VALUE           - Source Filename, PDF to be signed
-  -outfile=VALUE          - Target Filename, signed PDF
+  -type=sign              - Signature Type RFC 3369
   -dn=VALUE               - Subject Distinguished Name for the On Demand Certificate
                             Supported attributes, separated by a comma:
                             [mandatory]
@@ -38,9 +35,7 @@ OPTIONS
                              - SerialNumber
                              - st or StateOrProvinceName
                              - sn or Surname
-
-  ### MOBILE ID AUTHORIZATION ###
-  Only applicable to Signatures with On Demand Certificates:
+  Optional Mobile ID Authorization:
   -midMsisdn=VALUE        - Phone number (requires -dn -midMsg -midLang)
   -midMsg=VALUE           - Message to be displayed (requires -dn -midMsisdn -midLang)
                             A placeholder #TRANSID# may be used anywhere in the message to include a unique transaction id
