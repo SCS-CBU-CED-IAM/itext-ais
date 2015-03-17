@@ -15,7 +15,7 @@
  * Copyright (C) 2013. All rights reserved.
  * </p>
  * License:
- * GNU General Public License version 2 or later; see LICENSE.md
+ * Licensed under the Apache License, Version 2.0 or later; see LICENSE.md
  * </p>
  * Author:
  * Swisscom (Schweiz) AG
