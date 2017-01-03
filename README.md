@@ -47,6 +47,11 @@ OPTIONS
                              - it (italiano)
   -stepUpSerialNumber=VALUE  - Optional: Verify the MobileID / PwdOTP SerialNumber (16 chars; starting with 'MIDCHE' or 'SAS01')
                             Document will only be signed if it matched the actual SerialNumber
+                            
+  Note: signatures with OnDemand certificates and declaration of will (step-up) work for both MobileID and Password + SMS One-Time Password (PwdOTP) authentication. 
+  However, meanwhile with MobileID the example works without any interaction between the running java program and the end user, for PwdOTP the opening of the consent URL 
+  (which is logged in verbose mode in order to perform this step manually) is not included as part of the sample, since it requires an integration on an existing customer 
+  environment and is dependent of the platform and browser used by the end-user.
 
   ### ADOBE PDF SETTINGS ###
   -reason=VALUE           - Signing Reason
