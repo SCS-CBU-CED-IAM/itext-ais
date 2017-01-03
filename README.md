@@ -35,18 +35,18 @@ OPTIONS
                              - SerialNumber
                              - st or StateOrProvinceName
                              - sn or Surname
-  Optional Mobile ID Authorization:
-  -midMsisdn=VALUE        - Phone number (requires -dn -midMsg -midLang)
-  -midMsg=VALUE           - Message to be displayed (requires -dn -midMsisdn -midLang)
+  Optional Step-Up Authorization (Declaration of Will):
+  -stepUpMsisdn=VALUE        - Phone number (requires -dn -stepUpMsg -stepUpLang)
+  -stepUpMsg=VALUE           - Message to be displayed (requires -dn -stepUpMsisdn -stepUpLang)
                             A placeholder #TRANSID# may be used anywhere in the message to include a unique transaction id
-  -midLang=VALUE          - Language of the message to be displayed (requires -dn -midMsisdn -midMsg)
+  -stepUpLang=VALUE          - Language of the message to be displayed (requires -dn -stepUpMsisdn -stepUpMsg)
                             supported values:
                              - en (english)
                              - de (deutsch)
                              - fr (français)
                              - it (italiano)
-  -midSerialNumber=VALUE  - Optional: Verify the Mobile ID SerialNumber (16 chars; starting with 'MIDCHE')
-                            Document will only be signed if it matched the actual Mobile ID SerialNumber
+  -stepUpSerialNumber=VALUE  - Optional: Verify the MobileID / PwdOTP SerialNumber (16 chars; starting with 'MIDCHE' or 'SAS01')
+                            Document will only be signed if it matched the actual SerialNumber
 
   ### ADOBE PDF SETTINGS ###
   -reason=VALUE           - Signing Reason
@@ -77,8 +77,8 @@ EXAMPLES
     java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH'
 
   [sign with on demand certificate and mobile id authorization]
-    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en
-    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en -midSerialNumber=MIDCHE2EG8NAWUB3
+    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en
+    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en -stepUpSerialNumber=MIDCHE2EG8NAWUB3
 ```
 
 #### Dependencies

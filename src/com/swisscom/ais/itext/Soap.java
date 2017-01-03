@@ -23,11 +23,24 @@
 
 package com.swisscom.ais.itext;
 
-import com.itextpdf.text.pdf.codec.Base64;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,20 +49,28 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.soap.*;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPPart;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.*;
-import java.net.URLConnection;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Properties;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import com.itextpdf.text.pdf.codec.Base64;
+import com.swisscom.ais.itext.Include.RequestType;
 
 public class Soap {
 
@@ -57,11 +78,6 @@ public class Soap {
      * Constant for timestamp urn
      */
     private static final String _TIMESTAMP_URN = "urn:ietf:rfc:3161";
-
-    /**
-     * Constant for mobile id type
-     */
-    private static final String _MOBILE_ID_TYPE = "http://ais.swisscom.ch/1.0/auth/mobileid/1.0";
 
     /**
      * Path to configuration file. Can also set in constructor
@@ -179,6 +195,7 @@ public class Soap {
                      @Nullable String msg, @Nullable String language, @Nullable String serialnumber)
             throws Exception {
 
+    	// LATER throw a specific Exception and not the generic one
         Include.HashAlgorithm hashAlgo = Include.HashAlgorithm.valueOf(properties.getProperty("DIGEST_METHOD").trim().toUpperCase());
 
         String claimedIdentity = properties.getProperty("CUSTOMER");
@@ -194,6 +211,8 @@ public class Soap {
             String requestId = getRequestId();
 
             if (msisdn != null && msg != null && language != null && signatureType.equals(Include.Signature.ONDEMAND)) {
+            	
+            	// On-Demand signature WITH step-up
                 if (_debugMode) {
                     System.out.println("Going to sign ondemand with mobile id");
                 }
@@ -201,38 +220,90 @@ public class Soap {
                 // Add 3 Minutes to move signing time within the OnDemand Certificate Validity
                 // This is only relevant in case the signature does not include a timestamp
                 signingTime.add(Calendar.MINUTE, 3); 
-                signDocumentOnDemandCertMobileId(new PDF[]{pdf}, signingTime, hashAlgo, _url, claimedIdentity, distinguishedName, msisdn, msg, language, serialnumber, requestId);
+                
+                // Read polling interval from the properties
+                if (properties.getProperty("POLLING_INTERVAL") == null) {
+                	throw new Exception("Polling interval is missing in the configuration.");
+                }
+                
+                // Default values for polling interval and poll retries: 18000 milliseconds and 10 retries
+                // These values are equal to the server timeout when using MID as step-up (180 seconds) 
+                // For PwdOTP, higher values should be configured in signpdf.properties
+                long pollingInterval = 18000;
+                int pollRetries = 10;
+                
+                // Read configuration
+                try {
+	                if (properties.getProperty("POLLING_INTERVAL") != null) {
+	                	pollingInterval = Long.parseLong(properties.getProperty("POLLING_INTERVAL"));
+	                }
+	                
+	                if (properties.getProperty("POLL_RETRIES") != null) {
+	                	pollRetries = Integer.parseInt(properties.getProperty("POLL_RETRIES"));
+	                }
+                
+                } catch (NumberFormatException nfe) {
+                	if (_debugMode) {
+                		System.out.println("Error reading configuration. Using default value.");
+                		System.out.println("Error message: " + nfe.getMessage());
+                	}
+                }
+                           
+                signDocumentOnDemandCertStepUp(
+                		new PDF[]{pdf}, 
+                		signingTime, 
+                		hashAlgo, 
+                		_url, 
+                		claimedIdentity, 
+                		distinguishedName, 
+                		msisdn, 
+                		msg, 
+                		language, 
+                		serialnumber, 
+                		requestId,
+                		pollingInterval,
+                		pollRetries);
+            
             } else if (signatureType.equals(Include.Signature.ONDEMAND)) {
-                if (_debugMode) {
+                
+            	// On-Demand signature WITHOUT step-up
+            	if (_debugMode) {
                     System.out.println("Going to sign with ondemand");
                 }
                 Calendar signingTime = Calendar.getInstance();
                 // Add 3 Minutes to move signing time within the OnDemand Certificate Validity
                 // This is only relevant in case the signature does not include a timestamp
                 signingTime.add(Calendar.MINUTE, 3);
-                signDocumentOnDemandCert(new PDF[]{pdf}, hashAlgo, signingTime, _url, true,
-                        distinguishedName, claimedIdentity, requestId);
+                signDocumentOnDemandCert(new PDF[]{pdf}, hashAlgo, signingTime, _url, distinguishedName, claimedIdentity, requestId);
+            
             } else if (signatureType.equals(Include.Signature.TIMESTAMP)) {
+            	
+            	// Timestamp only
                 if (_debugMode) {
                     System.out.println("Going to sign only with timestamp");
                 }
                 signDocumentTimestampOnly(new PDF[]{pdf}, hashAlgo, Calendar.getInstance(), _url, claimedIdentity,
                         requestId);
+                
             } else if (signatureType.equals(Include.Signature.STATIC)) {
+            	
+            	// Static signature
                 if (_debugMode) {
                     System.out.println("Going to sign with static cert");
                 }
                 signDocumentStaticCert(new PDF[]{pdf}, hashAlgo, Calendar.getInstance(), _url, claimedIdentity, requestId);
+                
             } else {
                 throw new Exception("Wrong or missing parameters. Can not find a signature type.");
             }
+        
         } catch (Exception e) {
             throw new Exception(e);
         }
     }
 
     /**
-     * Create SOAP request message and sign document with on demand certificate and authenticate with mobile id
+     * Create SOAP request message and sign document with on demand certificate and authenticate with MobileID or PwdOTP
      *
      * @param pdfs              Pdf input files
      * @param signDate          Date when document(s) will be signed
@@ -240,26 +311,36 @@ public class Soap {
      * @param serverURI         Server uri where to send the request
      * @param claimedIdentity   Signers identity
      * @param distinguishedName Information about signer e.g. name, country etc.
-     * @param phoneNumber       Number of phone when mobile id is used
+     * @param phoneNumber       Phone number for declaration of will (step-up)
      * @param certReqMsg        Message which the signer get on his phone
      * @param certReqMsgLang    Language of message
      * @param requestId         An id for the request
+     * @param pollingInterval	Interval between polling requests for asynchronous signing request.
      * @throws Exception If hash or request can not be generated or document can not be signed.
      */
-    private void signDocumentOnDemandCertMobileId(@Nonnull PDF pdfs[], @Nonnull Calendar signDate, @Nonnull Include.HashAlgorithm hashAlgo,
+    private void signDocumentOnDemandCertStepUp(@Nonnull PDF pdfs[], @Nonnull Calendar signDate, @Nonnull Include.HashAlgorithm hashAlgo,
                                                   @Nonnull String serverURI, @Nonnull String claimedIdentity,
                                                   @Nonnull String distinguishedName, @Nonnull String phoneNumber, @Nonnull String certReqMsg,
-                                                  @Nonnull String certReqMsgLang, @Nonnull String certReqSerialNumber, String requestId) throws Exception {
+                                                  @Nonnull String certReqMsgLang, @Nonnull String certReqSerialNumber, String requestId,
+                                                  @Nonnull long pollingInterval,
+                                                  @Nonnull int pollRetries) throws Exception {
         String[] additionalProfiles;
 
+        
+        // ASYNCHRON and REDIRECT profile are needed for PwdOTP (for MID only ASYNCHRON is necessary)
         if (pdfs.length > 1) {
-            additionalProfiles = new String[2];
-            additionalProfiles[1] = Include.AdditionalProfiles.BATCH.getProfileName();
+            additionalProfiles = new String[4];
+        	additionalProfiles[3] = Include.AdditionalProfiles.BATCH.getProfileName();
         } else {
-            additionalProfiles = new String[1];
+            additionalProfiles = new String[3];
         }
-        additionalProfiles[0] = Include.AdditionalProfiles.ON_DEMAND_CERTIFCATE.getProfileName();
-
+        
+        additionalProfiles[0] = Include.AdditionalProfiles.ON_DEMAND_CERTIFICATE.getProfileName();
+        additionalProfiles[1] = Include.AdditionalProfiles.REDIRECT.getProfileName();
+        
+        // With the new interface version (Reference Guide 2.x), all on-demand signatures with step-up must be asynchronous
+        additionalProfiles[2] = Include.AdditionalProfiles.ASYNCHRON.getProfileName();
+        
         int estimatedSize = getEstimatedSize(false);
 
         byte[][] pdfHash = new byte[pdfs.length][];
@@ -269,13 +350,13 @@ public class Soap {
 
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), true,
                 pdfHash, additionalProfiles,
-                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), distinguishedName, _MOBILE_ID_TYPE, phoneNumber,
+                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), distinguishedName, phoneNumber,
                 certReqMsg, certReqMsgLang, certReqSerialNumber, null, requestId);
 
-        signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "Base64Signature");
-
+        // On-demand requests with step-up must be asynchronous
+        signDocumentAsync(sigReqMsg, serverURI, pdfs, claimedIdentity, pollingInterval, pollRetries, estimatedSize, "Base64Signature");
     }
-
+    
     /**
      * create SOAP request message and sign document with ondemand certificate but without mobile id
      *
@@ -290,9 +371,9 @@ public class Soap {
      * @throws Exception If hash or request can not be generated or document can not be signed.
      */
     private void signDocumentOnDemandCert(@Nonnull PDF[] pdfs, @Nonnull Include.HashAlgorithm hashAlgo, Calendar signDate, @Nonnull String serverURI,
-                                          @Nonnull boolean mobileIDStepUp, @Nonnull String distinguishedName, @Nonnull String claimedIdentity, String requestId)
+                                          @Nonnull String distinguishedName, @Nonnull String claimedIdentity, String requestId)
             throws Exception {
-
+    	
         String[] additionalProfiles;
         if (pdfs.length > 1) {
             additionalProfiles = new String[2];
@@ -300,7 +381,7 @@ public class Soap {
         } else {
             additionalProfiles = new String[1];
         }
-        additionalProfiles[0] = Include.AdditionalProfiles.ON_DEMAND_CERTIFCATE.getProfileName();
+        additionalProfiles[0] = Include.AdditionalProfiles.ON_DEMAND_CERTIFICATE.getProfileName();
 
         int estimatedSize = getEstimatedSize(false);
 
@@ -311,7 +392,7 @@ public class Soap {
 
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), true,
                 pdfHash, additionalProfiles,
-                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), distinguishedName, null, null, null, null, null, null, requestId);
+                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), distinguishedName, null, null, null, null, null, requestId);
 
         signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "Base64Signature");
     }
@@ -346,7 +427,7 @@ public class Soap {
 
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), false,
                 pdfHash, additionalProfiles,
-                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), null, null, null, null, null, null, null, requestId);
+                claimedIdentity, Include.SignatureType.CMS.getSignatureType(), null, null, null, null, null, null, requestId);
 
         signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "Base64Signature");
     }
@@ -386,7 +467,7 @@ public class Soap {
 
         SOAPMessage sigReqMsg = createRequestMessage(Include.RequestType.SignRequest, hashAlgo.getHashUri(), false,
                 pdfHash, additionalProfiles, claimedIdentity, signatureType.getSignatureType(),
-                null, null, null, null, null, null, null, requestId);
+                null, null, null, null, null, null, requestId);
 
         signDocumentSync(sigReqMsg, serverURI, pdfs, estimatedSize, "RFC3161TimeStampToken");
     }
@@ -404,7 +485,7 @@ public class Soap {
     private void signDocumentSync(@Nonnull SOAPMessage sigReqMsg, @Nonnull String serverURI, @Nonnull PDF[] pdfs,
                                   int estimatedSize, String signNodeName) throws Exception {
 
-        String sigResponse = sendRequest(sigReqMsg, serverURI);
+    	String sigResponse = sendRequest(sigReqMsg, serverURI);
         ArrayList<String> responseResult = getTextFromXmlText(sigResponse, "ResultMajor");
         boolean singingSuccess = sigResponse != null && responseResult != null && Include.RequestResult.Success.getResultUrn().equals(responseResult.get(0));
 
@@ -496,6 +577,275 @@ public class Soap {
         ArrayList<String> signHashes = getTextFromXmlText(sigResponse, signNodeName);
         signDocuments(signHashes, ocsp, crl, pdfs, estimatedSize, signNodeName.equals("RFC3161TimeStampToken"));
     }
+    
+    /**
+     * Send SOAP request for asynchronous signing to server
+     *
+     * @param sigReqMsg     SOAP request message which will be send to the server
+     * @param serverURI     Uri of server
+     * @param pdfs          Pdf input file
+     * @param estimatedSize Estimated size of external signature
+     * @param signNodeName  Name of node where to find the signature
+     * @throws Exception If hash can not be generated or document can not be signed.
+     */
+    private void signDocumentAsync(
+    		@Nonnull SOAPMessage sigReqMsg, 
+    		@Nonnull String serverURI, 
+    		@Nonnull PDF[] pdfs,
+    		@Nonnull String claimedIdentity,
+    		@Nonnull long interval,
+    		@Nonnull int retries,
+            int estimatedSize, 
+            String signNodeName) throws Exception {
+
+        String sigResponse = sendRequest(sigReqMsg, serverURI);
+        ArrayList<String> responseResult = getTextFromXmlText(sigResponse, "ResultMajor");
+        
+        // The response to an asynchronous request is "pending"
+        boolean pending = sigResponse != null && responseResult != null && Include.RequestResult.Pending.getResultUrn().equals(responseResult.get(0));
+
+        // Parse ResponseID and ConsentURL from the response (if available)
+        ArrayList<String> responseId_array = getTextFromXmlText(sigResponse, "async:ResponseID");
+        ArrayList<String> consentUrl_array = getTextFromXmlText(sigResponse, "sc:ConsentURL");
+        
+        String responseId = responseId_array.get(0);
+        
+        String consentUrl = "";
+        // Is there a consent URL available in the response? 
+        if (consentUrl_array != null && !consentUrl_array.isEmpty()) {
+        	consentUrl = consentUrl_array.get(0);
+        }
+        
+        if (_debugMode || _verboseMode) {
+        	
+        	// Log ConsentURL
+        	if (consentUrl != null) {
+        		System.out.println("MobileID not available, fallback to PwdOTP.");
+        		System.out.println("ConsentURL for declaration of will available here: " + consentUrl);
+        	}
+        	
+        	// Get pdf input file names for message output
+            String pdfNames = "";
+            for (int i = 0; i < pdfs.length; i++) {
+                pdfNames = pdfNames.concat(new File(pdfs[i].getInputFilePath()).getName());
+                if (pdfs.length > i + 1)
+                    pdfNames = pdfNames.concat(", ");
+            }
+        	
+        	if (pending) {
+	            System.out.println("Request for " + pdfNames + " pending with responseID: " + responseId );
+	            System.out.println("Starting the polling with polling interval: " + interval + " milliseconds.");
+	            
+	            // Create polling request message
+	            SOAPMessage pollReqMsg = createPendingMessage(RequestType.PendingRequest, claimedIdentity, responseId);
+	            
+	            // Start the polling
+	            poll(pollReqMsg, serverURI, responseId, interval, retries, pdfs, estimatedSize, signNodeName);
+            
+        	} else {
+        		System.out.print("FAILED to get successful AIS SigResponse for " + pdfNames);
+        		
+        	}
+        	
+        	if (sigResponse != null) {
+
+                ArrayList<String> resultMinor = null;
+                ArrayList<String> errorMsg = null;
+
+                if (_verboseMode) {
+                    resultMinor = getTextFromXmlText(sigResponse, "ResultMinor");
+                    errorMsg = getTextFromXmlText(sigResponse, "ResultMessage");
+
+                    if (responseResult != null || resultMinor != null || errorMsg != null) {
+                        if (!pending) {
+                            System.out.println(" with following details:");
+                        } else {
+                            System.out.println(" with following details:");
+                        }
+                    }
+
+                    if (responseResult != null) {
+                        for (String s : responseResult) {
+                            if (s.length() > 0) {
+                                if (!pending) {
+                                    System.out.println(" Result major: " + s);
+                                } else {
+                                    System.out.println(" Result major: " + s);
+                                }
+                            }
+                        }
+                    }
+
+                    if (resultMinor != null) {
+                        for (String s : resultMinor) {
+                            if (s.length() > 0) {
+                                if (!pending) {
+                                    System.out.println(" Result minor: " + s);
+                                } else {
+                                    System.out.println(" Result minor: " + s);
+                                }
+                            }
+                        }
+                    }
+
+                    if (errorMsg != null) {
+                        for (String s : errorMsg) {
+                            if (s.length() > 0) {
+                                if (!pending) {
+                                    System.out.println(" Result message: " + s);
+                                } else {
+                                    System.out.println(" Result message: " + s);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+        	//we need a line break
+            if (!pending) {
+                System.out.println("");
+            } else {
+                System.out.println("");
+            }
+        }
+    }
+        
+    /**
+     * Poll the server until the asynchronous request does not return pending anymore.
+     * @param pollReqMsg
+     * @param serverURI
+     * @param requestID
+     * @param interval: time between polling requests, in milliseconds.
+     * @throws Exception
+     */
+    private void poll(
+    		@Nonnull SOAPMessage pollReqMsg, 
+    		@Nonnull String serverURI, 
+    		@Nonnull String responseId, 
+    		@Nonnull long interval,
+    		@Nonnull int maxRetries,
+    		@Nonnull PDF[] pdfs,
+            int estimatedSize, 
+            String signNodeName) throws Exception {
+        	
+    	// Send poll request
+    	String sigResponse = sendRequest(pollReqMsg, serverURI);
+        ArrayList<String> responseResult = getTextFromXmlText(sigResponse, "ResultMajor");
+        
+        boolean pending = (responseResult != null && Include.RequestResult.Pending.getResultUrn().equals(responseResult.get(0)));
+    	
+    	// Loop while response is pending and max number of retries wasn't reached
+    	int retries = 0;
+        while (pending && retries < maxRetries) {
+    		// Delay between polling requests: sleep during the given interval. 
+    		TimeUnit.MILLISECONDS.sleep(interval);
+    		if (_debugMode) {
+    			System.out.println("Retry " + retries + " - Polling with RequestID " + responseId + "...");
+    		}
+    		sigResponse = sendRequest(pollReqMsg, serverURI);
+    		responseResult = getTextFromXmlText(sigResponse, "ResultMajor");
+    		pending = (responseResult != null && Include.RequestResult.Pending.getResultUrn().equals(responseResult.get(0)));
+    		retries++;
+    	}
+    	 
+    	boolean signingSuccess = sigResponse != null && responseResult != null && Include.RequestResult.Success.getResultUrn().equals(responseResult.get(0));
+
+    	if (_debugMode || _verboseMode) {
+    		
+    		// Print a message if there was a timeout before completing the step-up
+            if (pending && retries == maxRetries) {
+            	System.out.println("Timeout - maximum number of retries (=" + maxRetries + ") was reached.");
+            }
+    		
+    		// Get PDF input file names for message output
+            String pdfNames = "";
+            for (int i = 0; i < pdfs.length; i++) {
+                pdfNames = pdfNames.concat(new File(pdfs[i].getInputFilePath()).getName());
+                if (pdfs.length > i + 1)
+                    pdfNames = pdfNames.concat(", ");
+            }
+    	
+            if (!signingSuccess) {
+                System.out.print("FAILED to get successful AIS SigResponse for " + pdfNames);
+            } else {
+                System.out.print("SUCCEEDED to get AIS SigResponse for " + pdfNames);
+            }
+    	
+            if (sigResponse != null) {
+
+                ArrayList<String> resultMinor = null;
+                ArrayList<String> errorMsg = null;
+
+                if (_verboseMode) {
+                    resultMinor = getTextFromXmlText(sigResponse, "ResultMinor");
+                    errorMsg = getTextFromXmlText(sigResponse, "ResultMessage");
+
+                    if (responseResult != null || resultMinor != null || errorMsg != null) {
+                        if (!signingSuccess) {
+                            System.out.println(" with following details:");
+                        } else {
+                            System.out.println(" with following details:");
+                        }
+                    }
+
+                    if (responseResult != null) {
+                        for (String s : responseResult) {
+                            if (s.length() > 0) {
+                                if (!signingSuccess) {
+                                    System.out.println(" Result major: " + s);
+                                } else {
+                                    System.out.println(" Result major: " + s);
+                                }
+                            }
+                        }
+                    }
+
+                    if (resultMinor != null) {
+                        for (String s : resultMinor) {
+                            if (s.length() > 0) {
+                                if (!signingSuccess) {
+                                    System.out.println(" Result minor: " + s);
+                                } else {
+                                    System.out.println(" Result minor: " + s);
+                                }
+                            }
+                        }
+                    }
+
+                    if (errorMsg != null) {
+                        for (String s : errorMsg) {
+                            if (s.length() > 0) {
+                                if (!signingSuccess) {
+                                    System.out.println(" Result message: " + s);
+                                } else {
+                                    System.out.println(" Result message: " + s);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //we need a line break
+            if (!signingSuccess) {
+                System.out.println("");
+            } else {
+                System.out.println("");
+            }
+    	}
+
+        if (!signingSuccess) {
+            throw new Exception();
+        }
+        
+        // Retrieve the Revocation Information (OCSP/CRL validation information)
+        ArrayList<String> crl = getTextFromXmlText(sigResponse, "sc:CRL");
+        ArrayList<String> ocsp = getTextFromXmlText(sigResponse, "sc:OCSP");
+
+        ArrayList<String> signHashes = getTextFromXmlText(sigResponse, signNodeName);
+        signDocuments(signHashes, ocsp, crl, pdfs, estimatedSize, signNodeName.equals("RFC3161TimeStampToken"));
+    }
+
 
     /**
      * Add signature to pdf
@@ -592,7 +942,6 @@ public class Soap {
      * @param claimedIdentity          Signers identity / profile
      * @param signatureType            Urn of signature type e.g. signature type cms or timestamp
      * @param distinguishedName        Information about signer e.g. name, country etc.
-     * @param mobileIdType             Urn of mobile id type
      * @param phoneNumber              Mobile id for on demand certificates with mobile id request
      * @param certReqMsg               Message which will be send to phone number if set
      * @param certReqMsgLang           Language from message which will be send to mobile id
@@ -606,7 +955,7 @@ public class Soap {
                                              boolean mobileIDStepUp, @Nonnull byte[][] hashList,
                                              String[] additionalProfiles, String claimedIdentity,
                                              @Nonnull String signatureType, String distinguishedName,
-                                             String mobileIdType, String phoneNumber, String certReqMsg, String certReqMsgLang,
+                                             String phoneNumber, String certReqMsg, String certReqMsgLang,
                                              String certReqSerialNumber, String responseId, String requestId) throws SOAPException, IOException {
 
         MessageFactory messageFactory = MessageFactory.newInstance();
@@ -679,19 +1028,16 @@ public class Soap {
                     distinguishedNameElement.addTextNode(distinguishedName);
                     if (phoneNumber != null) {
                         SOAPElement stepUpAuthorisationElement = certificateRequestElement.addChildElement("StepUpAuthorisation", "sc");
-                        if (mobileIdType != null) {
-                            SOAPElement mobileIdElement = stepUpAuthorisationElement.addChildElement("MobileID", "sc");
-                            mobileIdElement.addAttribute(new QName("Type"), _MOBILE_ID_TYPE);
-                            SOAPElement msisdnElement = mobileIdElement.addChildElement("MSISDN", "sc");
-                            msisdnElement.addTextNode(phoneNumber);
-                            SOAPElement certReqMsgElement = mobileIdElement.addChildElement("Message", "sc");
-                            certReqMsgElement.addTextNode(certReqMsg);
-                            SOAPElement certReqMsgLangElement = mobileIdElement.addChildElement("Language", "sc");
-                            certReqMsgLangElement.addTextNode(certReqMsgLang);
-                            if (certReqSerialNumber != null) {
-                            	SOAPElement certReqMsgSerialNumberElement = mobileIdElement.addChildElement("SerialNumber", "sc");
-                            	certReqMsgSerialNumberElement.addTextNode(certReqSerialNumber);
-                            }
+                    	SOAPElement mobileIdElement = stepUpAuthorisationElement.addChildElement("Phone", "sc");
+                        SOAPElement msisdnElement = mobileIdElement.addChildElement("MSISDN", "sc");
+                        msisdnElement.addTextNode(phoneNumber);
+                        SOAPElement certReqMsgElement = mobileIdElement.addChildElement("Message", "sc");
+                        certReqMsgElement.addTextNode(certReqMsg);
+                        SOAPElement certReqMsgLangElement = mobileIdElement.addChildElement("Language", "sc");
+                        certReqMsgLangElement.addTextNode(certReqMsgLang);
+                        if (certReqSerialNumber != null) {
+                        	SOAPElement certReqMsgSerialNumberElement = mobileIdElement.addChildElement("SerialNumber", "sc");
+                        	certReqMsgSerialNumberElement.addTextNode(certReqSerialNumber);
                         }
                     }
                 }
@@ -702,7 +1048,6 @@ public class Soap {
                 signatureTypeElement.addTextNode(signatureType);
             }
 
-            
             if (!signatureType.equals(_TIMESTAMP_URN)) {
                 SOAPElement addTimeStampelement = optionalInputsElement.addChildElement("AddTimestamp");
                 addTimeStampelement.addAttribute(new QName("Type"), _TIMESTAMP_URN);
@@ -736,6 +1081,78 @@ public class Soap {
 
         return soapMessage;
     }
+    
+    /**
+     * Analog to the create request message method, this one returns a polling request for asynchronous methods.
+     * 
+     * @param reqType
+     * @param responseId
+     * @return
+     * @throws SOAPException
+     * @throws IOException
+     */
+    private SOAPMessage createPendingMessage(
+    		@Nonnull Include.RequestType reqType, 
+    		String claimedIdentity,
+    		String responseId) throws SOAPException, IOException {
+    	
+    	MessageFactory messageFactory = MessageFactory.newInstance();
+        SOAPMessage soapMessage = messageFactory.createMessage();
+        SOAPPart soapPart = soapMessage.getSOAPPart();
+
+        // SOAP Envelope
+        SOAPEnvelope envelope = soapPart.getEnvelope();
+        envelope.removeNamespaceDeclaration("SOAP-ENV");
+        envelope.setPrefix("soap");
+        envelope.addAttribute(new QName("xmlns"), "urn:oasis:names:tc:dss:1.0:core:schema");
+        envelope.addNamespaceDeclaration("dsig", "http://www.w3.org/2000/09/xmldsig#");
+        envelope.addNamespaceDeclaration("sc", "http://ais.swisscom.ch/1.0/schema");
+        envelope.addNamespaceDeclaration("ais", "http://service.ais.swisscom.com/");
+        
+        // Add async namespace
+        envelope.addNamespaceDeclaration("async", "urn:oasis:names:tc:dss:1.0:profiles:asynchronousprocessing:1.0");
+        
+        //SOAP Header
+        SOAPHeader soapHeader = envelope.getHeader();
+        soapHeader.removeNamespaceDeclaration("SOAP-ENV");
+        soapHeader.setPrefix("soap");
+
+        // SOAP Body
+        SOAPBody soapBody = envelope.getBody();
+        soapBody.removeNamespaceDeclaration("SOAP-ENV");
+        soapBody.setPrefix("soap");
+
+        SOAPElement pendingElement = soapBody.addChildElement("pending", "ais");
+        
+        SOAPElement requestElement = pendingElement.addChildElement(reqType.getRequestType(), "async");
+        requestElement.addAttribute(new QName("Profile"), reqType.getUrn());
+        
+        // Optional Inputs
+        SOAPElement optionalInputsElement = requestElement.addChildElement("OptionalInputs");
+
+        // Claimed Identity
+        if (claimedIdentity != null) {
+        	SOAPElement claimedIdentityElement = optionalInputsElement.addChildElement(new QName("ClaimedIdentity"));
+        	SOAPElement claimedIdNameElement = claimedIdentityElement.addChildElement("Name");
+        	claimedIdNameElement.addTextNode(claimedIdentity);
+        }
+        
+        // async:ResponseID
+        SOAPElement responseIdElement = optionalInputsElement.addChildElement("ResponseID", "async");
+        responseIdElement.addTextNode(responseId);
+
+        soapMessage.saveChanges();
+
+        if (_debugMode) {
+            System.out.print("\nRequest SOAP Message:\n");
+            ByteArrayOutputStream ba = new ByteArrayOutputStream();
+            soapMessage.writeTo(ba);
+            String msg = new String(ba.toByteArray());
+            System.out.println(getPrettyFormatedXml(msg, 2));
+        }
+
+        return soapMessage;
+    }
 
     /**
      * Creating connection object and send request to server. If debug is set to true it will print response message.
@@ -752,7 +1169,7 @@ public class Soap {
         if (conn instanceof HttpsURLConnection) {
             ((HttpsURLConnection) conn).setRequestMethod("POST");
         }
-
+        
         conn.setAllowUserInteraction(true);
         conn.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
         conn.setDoOutput(true);

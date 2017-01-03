@@ -85,22 +85,22 @@ public class SignPDF {
     String distinguishedName = null;
 
     /**
-     * Mobile phone number to send a message when signing a document. Needed for signing with mobile id
+     * Mobile phone number to send a message when signing a document. Needed for signing with MobileID/PwdOTP.
      */
     String msisdn = null;
 
     /**
-     * Message which will be send to mobile phone with mobile id. Needed for signing with mobile id.
+     * Message which will be send to mobile phone with mobile id. Needed for signing with MobileID/PwdOTP.
      */
     String msg = null;
 
     /**
-     * Language of the message which will be send to mobile phone with mobile id. Needed for signing with mobile id.
+     * Language of the message which will be send to the mobile phone (or shown under the consent URL). Needed for signing with MobileID/PwdOTP.
      */
     String language = null;
     
     /**
-     * Mobile ID Serial Number
+     * MobileID/PwdOTP Serial Number
      */
     String serialnumber = null;
 
@@ -196,17 +196,17 @@ public class SignPDF {
     	System.out.println("                             - st or StateOrProvinceName");
     	System.out.println("                             - sn or Surname");
     	System.out.println("  Optional Mobile ID Authorization:");
-    	System.out.println("  -midMsisdn=VALUE        - Phone number (requires -dn -midMsg -midLang)");
-    	System.out.println("  -midMsg=VALUE           - Message to be displayed (requires -dn -midMsisdn -midLang)");
+    	System.out.println("  -stepUpMsisdn=VALUE        - Phone number (requires -dn -stepUpMsg -stepUpLang)");
+    	System.out.println("  -stepUpMsg=VALUE           - Message to be displayed (requires -dn -stepUpMsisdn -stepUpLang)");
     	System.out.println("                            A placeholder #TRANSID# may be used anywhere in the message to include a unique transaction id");
-    	System.out.println("  -midLang=VALUE          - Language of the message to be displayed (requires -dn -midMsisdn -midMsg)");
+    	System.out.println("  -stepUpLang=VALUE          - Language of the message to be displayed (requires -dn -stepUpMsisdn -stepUpMsg)");
     	System.out.println("                            supported values:");
     	System.out.println("                             - en (english)");
     	System.out.println("                             - de (deutsch)");
     	System.out.println("                             - fr (français)");
     	System.out.println("                             - it (italiano)");
-    	System.out.println("  -midSerialNumber=VALUE  - Optional: Verify the Mobile ID SerialNumber (16 chars; starting with 'MIDCHE')");
-    	System.out.println("                            Document will only be signed if it matched the actual Mobile ID SerialNumber");
+    	System.out.println("  -stepUpSerialNumber=VALUE  - Optional: Verify the step-up SerialNumber (16 chars; starting with 'MIDCHE' or 'SAS01')");
+    	System.out.println("                            Document will only be signed if it matched the actual SerialNumber");
     	System.out.println();
     	System.out.println("  ### ADOBE PDF SETTINGS ###");
     	System.out.println("  -reason=VALUE           - Signing Reason");
@@ -237,8 +237,8 @@ public class SignPDF {
     	System.out.println("    java com.swisscom.ais.itext.SignPDF -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH'");
     	System.out.println();
     	System.out.println("  [sign with on demand certificate and mobile id authorization]");
-    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en");
-    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -midMsisdn=41792080350 -midMsg='acme.com: Sign the PDF? (#TRANSID#)' -MidLang=en -midSerialNumber=MIDCHE2EG8NAWUB3");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en");
+    	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en -stepUpSerialNumber=MIDCHE2EG8NAWUB3");
     	System.exit(1);
     }
 
@@ -329,15 +329,15 @@ public class SignPDF {
     			}
             } else if (param.contains("-dn=")) {
                 distinguishedName = args[i].substring(args[i].indexOf("=") + 1).trim();
-            } else if (param.contains("-midmsisdn=")) {
+            } else if (param.contains("-stepupmsisdn=")) {
                 msisdn = args[i].substring(args[i].indexOf("=") + 1).trim();
-            } else if (param.contains("-midmsg=")) {
+            } else if (param.contains("-stepupmsg=")) {
                 msg = args[i].substring(args[i].indexOf("=") + 1).trim();
                 String transId = getNewTransactionId();
                 msg = msg.replaceAll("#TRANSID#", transId);
-            } else if (param.contains("-midlang=")) {
+            } else if (param.contains("-stepuplang=")) {
                 language = args[i].substring(args[i].indexOf("=") + 1).trim();
-            } else if (param.contains("-midserialnumber=")) {
+            } else if (param.contains("-stepupserialnumber=")) {
             	serialnumber = args[i].substring(args[i].indexOf("=") + 1).trim();
             } else if (param.contains("-config=")) {
                 propertyFilePath = args[i].substring(args[i].indexOf("=") + 1).trim();

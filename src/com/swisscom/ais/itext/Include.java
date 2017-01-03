@@ -135,12 +135,12 @@ public class Include {
         /**
          * Request type sign request with name and urn
          */
-        SignRequest("SignRequest", "http://ais.swisscom.ch/1.0"),
+    	SignRequest("SignRequest", "http://ais.swisscom.ch/1.1"),
 
         /**
          * Request type pending request with name and urn
          */
-        PendingRequest("PendingRequest", "http://ais.swisscom.ch/1.0");
+        PendingRequest("PendingRequest", "http://ais.swisscom.ch/1.1");
 
         /**
          * Urn of request type
@@ -281,7 +281,12 @@ public class Include {
         /**
          * Additional profile type on demand certificate with urn
          */
-        ON_DEMAND_CERTIFCATE("http://ais.swisscom.ch/1.0/profiles/ondemandcertificate"),
+        ON_DEMAND_CERTIFICATE("http://ais.swisscom.ch/1.0/profiles/ondemandcertificate"),
+        
+        /**
+         * Aditional profile type on demand redirect for fallback method PwdOTP
+         */
+        REDIRECT("http://ais.swisscom.ch/1.1/profiles/redirect"), 
 
         /**
          * Additional profile type timestamp with urn
