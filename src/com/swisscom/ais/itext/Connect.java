@@ -24,9 +24,12 @@ package com.swisscom.ais.itext;
 
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMDecryptorProvider;
+import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder; 
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -357,8 +360,16 @@ public class Connect {
                     br.close();
                     br = new BufferedReader(new FileReader(_privateKeyName));
                     pemParser = new PEMParser(br);
-                    PEMKeyPair pemKeyPair = (PEMKeyPair) pemParser.readObject();
-                    privateKeyInfo = pemKeyPair.getPrivateKeyInfo();
+                    Object pemKeyPair = pemParser.readObject();
+                    if (pemKeyPair instanceof PEMEncryptedKeyPair) {
+                        String password=System.getProperty("keystore.password");
+                        PEMDecryptorProvider decryptionProv = new JcePEMDecryptorProviderBuilder().build(password.toCharArray());
+                        PEMKeyPair decryptedKeyPair = ((PEMEncryptedKeyPair) pemKeyPair).decryptKeyPair(decryptionProv);
+                        privateKeyInfo = decryptedKeyPair.getPrivateKeyInfo();
+                    }
+                    else {
+                        privateKeyInfo = ((PEMKeyPair)pemKeyPair).getPrivateKeyInfo();
+                    }
                 }
 
                 pemParser.close();
