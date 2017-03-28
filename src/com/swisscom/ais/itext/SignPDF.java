@@ -119,7 +119,14 @@ public class SignPDF {
     public static void main(String[] args) {
 
         SignPDF ais = new SignPDF();
-        ais.runSigning(args);
+        try {
+            ais.runSigning(args);
+        } catch (Exception e) {
+            if (debugMode || verboseMode) {
+                ais.printError(e.getMessage().replaceAll("java.lang.Exception", "").length() > 0 ? e.getMessage() : "");
+            }
+            System.exit(1);
+        }
 
     }
     
@@ -128,31 +135,24 @@ public class SignPDF {
      * If there are problems with parameters application will abort with exit code 1.
      * After all checks are done signing process will start.
      *
-     * @param params
+     * @param params argument list as described for main metho
      */
-    private void runSigning(String[] params) {
+    public void runSigning(String[] params) throws Exception {
 
         parseParameters(params);
         checkNecessaryParams();
         checkUnnecessaryParams();
 
-        try {
-            //parse signature
-            if (signature.equals(Include.Signature.SIGN) && distinguishedName != null) {
-                signature = Include.Signature.ONDEMAND;
-            } else if (signature.equals(Include.Signature.SIGN) && distinguishedName == null) {
-                signature = Include.Signature.STATIC;
-            }
-
-            //start signing
-            Soap dss_soap = new Soap(verboseMode, debugMode, propertyFilePath);
-            dss_soap.sign(signature, pdfToSign, signedPDF, signingReason, signingLocation, signingContact, certificationLevel, distinguishedName, msisdn, msg, language, serialnumber);
-        } catch (Exception e) {
-            if (debugMode || verboseMode) {
-                printError(e.getMessage().replaceAll("java.lang.Exception", "").length() > 0 ? e.getMessage() : "");
-            }
-            System.exit(1);
+        //parse signature
+        if (signature.equals(Include.Signature.SIGN) && distinguishedName != null) {
+            signature = Include.Signature.ONDEMAND;
+        } else if (signature.equals(Include.Signature.SIGN) && distinguishedName == null) {
+            signature = Include.Signature.STATIC;
         }
+
+        //start signing
+        Soap dss_soap = new Soap(verboseMode, debugMode, propertyFilePath);
+        dss_soap.sign(signature, pdfToSign, signedPDF, signingReason, signingLocation, signingContact, certificationLevel, distinguishedName, msisdn, msg, language, serialnumber);
     }
     
     private void printUsage() {
@@ -239,7 +239,6 @@ public class SignPDF {
     	System.out.println("  [sign with on demand certificate and mobile id authorization]");
     	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en");
     	System.out.println("    java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en -stepUpSerialNumber=MIDCHE2EG8NAWUB3");
-    	System.exit(1);
     }
 
     /**
@@ -258,7 +257,7 @@ public class SignPDF {
      * an error message will be shown
      * @param args
      */
-    private void parseParameters(String[] args) {
+    private void parseParameters(String[] args) throws Exception {
     	
     	// args can never be null. It would just be of size zero.
 
@@ -287,7 +286,7 @@ public class SignPDF {
                     if (debugMode || verboseMode) {
                         printError("File " + pdfToSign + " is not a file or can not be read.");
                     }
-                    System.exit(1);
+                    throw new Exception("File " + pdfToSign + " is not a file or can not be read.");
                 }
                 infile = true;
 			} else if (param.contains("-outfile=")) {
@@ -308,7 +307,7 @@ public class SignPDF {
 					if (debugMode || verboseMode) {
 						printError(errorMsg);
 					}
-					System.exit(1);
+					throw new Exception(errorMsg);
                 }
 				outfile = true;
             } else if (param.contains("-reason")) {
@@ -344,9 +343,9 @@ public class SignPDF {
                 File propertyFile = new File(propertyFilePath);
                 if (!propertyFile.isFile() || !propertyFile.canRead()) {
                     if (debugMode || verboseMode) {
-                        printError("Property file path is set but file does not exist or can not read it.");
+                        printError("Property file path is set but file does not exist or can not read it: "+propertyFilePath);
                     }
-                    System.exit(1);
+                    throw new Exception("Property file path is set but file does not exist or can not read it: "+propertyFilePath);
                 }
             } else if (args[i].toLowerCase().contains("-vv")) {
             	debugMode = true;
@@ -369,20 +368,20 @@ public class SignPDF {
     /**
      * Check if needed parameters are given. If not method will print an error and exit with code 1
      */
-    private void checkNecessaryParams() {
+    private void checkNecessaryParams() throws Exception {
 
         if (pdfToSign == null) {
             if (debugMode || verboseMode) {
                 printError("Input file does not exist.");
             }
-            System.exit(1);
+            throw new Exception("Input file does not exist.");
         }
 
         if (signedPDF == null) {
             if (debugMode || verboseMode) {
                 printError("Output file does not exist.");
             }
-            System.exit(1);
+            throw new Exception("Output file does not exist.");
         }
     }
 

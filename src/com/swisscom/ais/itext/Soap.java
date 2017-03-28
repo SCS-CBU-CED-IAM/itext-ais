@@ -140,14 +140,17 @@ public class Soap {
 
         if (propertyFilePath != null) {
             _cfgPath = propertyFilePath;
+
+          properties = new Properties();
+  
+          try {
+              properties.load(new FileReader(_cfgPath));
+          } catch (IOException e) {
+              throw new FileNotFoundException(("Could not load property file"));
+          }
         }
-
-        properties = new Properties();
-
-        try {
-            properties.load(new FileReader(_cfgPath));
-        } catch (IOException e) {
-            throw new FileNotFoundException(("Could not load property file"));
+        else { // propertyFilePath==null
+          properties=System.getProperties();
         }
 
         setConnectionProperties();
