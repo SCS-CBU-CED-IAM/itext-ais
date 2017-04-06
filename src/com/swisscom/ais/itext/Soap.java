@@ -613,7 +613,7 @@ public class Soap {
         
         String responseId = responseId_array.get(0);
         
-        String consentUrl = "";
+        String consentUrl = null;
         // Is there a consent URL available in the response? 
         if (consentUrl_array != null && !consentUrl_array.isEmpty()) {
         	consentUrl = consentUrl_array.get(0);
