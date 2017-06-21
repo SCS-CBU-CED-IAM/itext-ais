@@ -302,6 +302,8 @@ public class Soap {
         
         } catch (Exception e) {
             throw new Exception(e);
+        } finally {
+        	pdf.close();
         }
     }
 
