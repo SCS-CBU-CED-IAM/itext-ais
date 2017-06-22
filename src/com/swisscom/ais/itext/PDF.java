@@ -322,4 +322,8 @@ public class PDF {
 		byteArrayOutputStream.close();
 		outputStream.close();
 	}
+	
+	public void close() {
+	   pdfReader.close();
+	}
 }
