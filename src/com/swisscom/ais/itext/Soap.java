@@ -303,7 +303,7 @@ public class Soap {
         } catch (Exception e) {
             throw new Exception(e);
         } finally {
-        	pdf.close();
+            pdf.close();
         }
     }
 
@@ -509,66 +509,11 @@ public class Soap {
                 System.out.print("SUCCEEDED to get AIS SigResponse for " + pdfNames);
             }
 
-            if (sigResponse != null) {
-
-                ArrayList<String> resultMinor = null;
-                ArrayList<String> errorMsg = null;
-
-                if (_verboseMode) {
-                    resultMinor = getTextFromXmlText(sigResponse, "ResultMinor");
-                    errorMsg = getTextFromXmlText(sigResponse, "ResultMessage");
-
-                    if (responseResult != null || resultMinor != null || errorMsg != null) {
-                        if (!singingSuccess) {
-                            System.out.println(" with following details:");
-                        } else {
-                            System.out.println(" with following details:");
-                        }
-                    }
-
-                    if (responseResult != null) {
-                        for (String s : responseResult) {
-                            if (s.length() > 0) {
-                                if (!singingSuccess) {
-                                    System.out.println(" Result major: " + s);
-                                } else {
-                                    System.out.println(" Result major: " + s);
-                                }
-                            }
-                        }
-                    }
-
-                    if (resultMinor != null) {
-                        for (String s : resultMinor) {
-                            if (s.length() > 0) {
-                                if (!singingSuccess) {
-                                    System.out.println(" Result minor: " + s);
-                                } else {
-                                    System.out.println(" Result minor: " + s);
-                                }
-                            }
-                        }
-                    }
-
-                    if (errorMsg != null) {
-                        for (String s : errorMsg) {
-                            if (s.length() > 0) {
-                                if (!singingSuccess) {
-                                    System.out.println(" Result message: " + s);
-                                } else {
-                                    System.out.println(" Result message: " + s);
-                                }
-                            }
-                        }
-                    }
-                }
+            if (sigResponse != null && _verboseMode) {
+                logSigningResponse(sigResponse, responseResult);
             }
-            //we need a line break
-            if (!singingSuccess) {
-                System.out.println("");
-            } else {
-                System.out.println("");
-            }
+
+            System.out.println("");
         }
 
         if (!singingSuccess) {
@@ -620,130 +565,71 @@ public class Soap {
         if (consentUrl_array != null && !consentUrl_array.isEmpty()) {
         	consentUrl = consentUrl_array.get(0);
         }
-        
+
+        String pdfNames = "";
         if (_debugMode || _verboseMode) {
-        	
-        	// Log ConsentURL
-        	if (consentUrl != null) {
-        		System.out.println("MobileID not available, fallback to PwdOTP.");
-        		System.out.println("ConsentURL for declaration of will available here: " + consentUrl);
-        	}
-        	
-        	// Get pdf input file names for message output
-            String pdfNames = "";
+
+            // Log ConsentURL
+            if (consentUrl != null) {
+                System.out.println("MobileID not available, fallback to PwdOTP.");
+                System.out.println("ConsentURL for declaration of will available here: " + consentUrl);
+            }
+
+            // Get pdf input file names for message output
             for (int i = 0; i < pdfs.length; i++) {
                 pdfNames = pdfNames.concat(new File(pdfs[i].getInputFilePath()).getName());
                 if (pdfs.length > i + 1)
                     pdfNames = pdfNames.concat(", ");
             }
+        }
         	
-        	if (pending) {
-	            System.out.println("Request for " + pdfNames + " pending with responseID: " + responseId );
-	            System.out.println("Starting the polling with polling interval: " + interval + " milliseconds.");
-	            
-	            // Create polling request message
-	            SOAPMessage pollReqMsg = createPendingMessage(RequestType.PendingRequest, claimedIdentity, responseId);
-	            
-	            // Start the polling
-	            poll(pollReqMsg, serverURI, responseId, interval, retries, pdfs, estimatedSize, signNodeName);
-            
-        	} else {
-        		System.out.print("FAILED to get successful AIS SigResponse for " + pdfNames);
-        		
-        	}
-        	
-        	if (sigResponse != null) {
-
-                ArrayList<String> resultMinor = null;
-                ArrayList<String> errorMsg = null;
-
-                if (_verboseMode) {
-                    resultMinor = getTextFromXmlText(sigResponse, "ResultMinor");
-                    errorMsg = getTextFromXmlText(sigResponse, "ResultMessage");
-
-                    if (responseResult != null || resultMinor != null || errorMsg != null) {
-                        if (!pending) {
-                            System.out.println(" with following details:");
-                        } else {
-                            System.out.println(" with following details:");
-                        }
-                    }
-
-                    if (responseResult != null) {
-                        for (String s : responseResult) {
-                            if (s.length() > 0) {
-                                if (!pending) {
-                                    System.out.println(" Result major: " + s);
-                                } else {
-                                    System.out.println(" Result major: " + s);
-                                }
-                            }
-                        }
-                    }
-
-                    if (resultMinor != null) {
-                        for (String s : resultMinor) {
-                            if (s.length() > 0) {
-                                if (!pending) {
-                                    System.out.println(" Result minor: " + s);
-                                } else {
-                                    System.out.println(" Result minor: " + s);
-                                }
-                            }
-                        }
-                    }
-
-                    if (errorMsg != null) {
-                        for (String s : errorMsg) {
-                            if (s.length() > 0) {
-                                if (!pending) {
-                                    System.out.println(" Result message: " + s);
-                                } else {
-                                    System.out.println(" Result message: " + s);
-                                }
-                            }
-                        }
-                    }
-                }
+        if (pending) {
+            if (_debugMode || _verboseMode) {
+                System.out.println("Request for " + pdfNames + " pending with responseID: " + responseId);
+                System.out.println("Starting the polling with polling interval: " + interval + " milliseconds.");
             }
-            
-        	//we need a line break
-            if (!pending) {
-                System.out.println("");
-            } else {
-                System.out.println("");
-            }
+
+            // Create polling request message
+            SOAPMessage pollReqMsg = createPendingMessage(RequestType.PendingRequest, claimedIdentity, responseId);
+
+            // Start the polling
+            poll(pollReqMsg, serverURI, responseId, interval, retries, pdfs, estimatedSize, signNodeName);
+        } else {
+            System.out.print("FAILED to get successful AIS SigResponse for " + pdfNames);
+        }
+
+        if (sigResponse != null && _verboseMode) {
+            logSigningResponse(sigResponse, responseResult);
         }
     }
-        
+
     /**
      * Poll the server until the asynchronous request does not return pending anymore.
      * @param pollReqMsg
      * @param serverURI
-     * @param requestID
      * @param interval: time between polling requests, in milliseconds.
      * @throws Exception
      */
     private void poll(
-    		@Nonnull SOAPMessage pollReqMsg, 
-    		@Nonnull String serverURI, 
-    		@Nonnull String responseId, 
+    		@Nonnull SOAPMessage pollReqMsg,
+    		@Nonnull String serverURI,
+    		@Nonnull String responseId,
     		@Nonnull long interval,
     		@Nonnull int maxRetries,
     		@Nonnull PDF[] pdfs,
-            int estimatedSize, 
+            int estimatedSize,
             String signNodeName) throws Exception {
-        	
+
     	// Send poll request
     	String sigResponse = sendRequest(pollReqMsg, serverURI);
         ArrayList<String> responseResult = getTextFromXmlText(sigResponse, "ResultMajor");
-        
+
         boolean pending = (responseResult != null && Include.RequestResult.Pending.getResultUrn().equals(responseResult.get(0)));
-    	
+
     	// Loop while response is pending and max number of retries wasn't reached
     	int retries = 0;
         while (pending && retries < maxRetries) {
-    		// Delay between polling requests: sleep during the given interval. 
+    		// Delay between polling requests: sleep during the given interval.
     		TimeUnit.MILLISECONDS.sleep(interval);
     		if (_debugMode) {
     			System.out.println("Retry " + retries + " - Polling with RequestID " + responseId + "...");
@@ -753,16 +639,16 @@ public class Soap {
     		pending = (responseResult != null && Include.RequestResult.Pending.getResultUrn().equals(responseResult.get(0)));
     		retries++;
     	}
-    	 
+
     	boolean signingSuccess = sigResponse != null && responseResult != null && Include.RequestResult.Success.getResultUrn().equals(responseResult.get(0));
 
     	if (_debugMode || _verboseMode) {
-    		
+
     		// Print a message if there was a timeout before completing the step-up
             if (pending && retries == maxRetries) {
             	System.out.println("Timeout - maximum number of retries (=" + maxRetries + ") was reached.");
             }
-    		
+
     		// Get PDF input file names for message output
             String pdfNames = "";
             for (int i = 0; i < pdfs.length; i++) {
@@ -770,79 +656,22 @@ public class Soap {
                 if (pdfs.length > i + 1)
                     pdfNames = pdfNames.concat(", ");
             }
-    	
+
             if (!signingSuccess) {
                 System.out.print("FAILED to get successful AIS SigResponse for " + pdfNames);
             } else {
                 System.out.print("SUCCEEDED to get AIS SigResponse for " + pdfNames);
             }
-    	
-            if (sigResponse != null) {
 
-                ArrayList<String> resultMinor = null;
-                ArrayList<String> errorMsg = null;
-
-                if (_verboseMode) {
-                    resultMinor = getTextFromXmlText(sigResponse, "ResultMinor");
-                    errorMsg = getTextFromXmlText(sigResponse, "ResultMessage");
-
-                    if (responseResult != null || resultMinor != null || errorMsg != null) {
-                        if (!signingSuccess) {
-                            System.out.println(" with following details:");
-                        } else {
-                            System.out.println(" with following details:");
-                        }
-                    }
-
-                    if (responseResult != null) {
-                        for (String s : responseResult) {
-                            if (s.length() > 0) {
-                                if (!signingSuccess) {
-                                    System.out.println(" Result major: " + s);
-                                } else {
-                                    System.out.println(" Result major: " + s);
-                                }
-                            }
-                        }
-                    }
-
-                    if (resultMinor != null) {
-                        for (String s : resultMinor) {
-                            if (s.length() > 0) {
-                                if (!signingSuccess) {
-                                    System.out.println(" Result minor: " + s);
-                                } else {
-                                    System.out.println(" Result minor: " + s);
-                                }
-                            }
-                        }
-                    }
-
-                    if (errorMsg != null) {
-                        for (String s : errorMsg) {
-                            if (s.length() > 0) {
-                                if (!signingSuccess) {
-                                    System.out.println(" Result message: " + s);
-                                } else {
-                                    System.out.println(" Result message: " + s);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            //we need a line break
-            if (!signingSuccess) {
-                System.out.println("");
-            } else {
-                System.out.println("");
+            if (sigResponse != null && _verboseMode) {
+                logSigningResponse(sigResponse, responseResult);
             }
     	}
 
         if (!signingSuccess) {
             throw new Exception();
         }
-        
+
         // Retrieve the Revocation Information (OCSP/CRL validation information)
         ArrayList<String> crl = getTextFromXmlText(sigResponse, "sc:CRL");
         ArrayList<String> ocsp = getTextFromXmlText(sigResponse, "sc:OCSP");
@@ -850,7 +679,6 @@ public class Soap {
         ArrayList<String> signHashes = getTextFromXmlText(sigResponse, signNodeName);
         signDocuments(signHashes, ocsp, crl, pdfs, estimatedSize, signNodeName.equals("RFC3161TimeStampToken"));
     }
-
 
     /**
      * Add signature to pdf
@@ -1274,6 +1102,51 @@ public class Soap {
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss:SSSS");
         int randomNumber = (int) (Math.random() * 1000);
         return (df.format(new Date()).concat(String.valueOf(randomNumber)));
+    }
+
+    /**
+     * Dumps the signing response details to console
+     * @param sigResponse
+     * @param responseResult
+     * @throws IOException
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     */
+    private void logSigningResponse(String sigResponse, ArrayList<String> responseResult) throws IOException, SAXException, ParserConfigurationException {
+
+        ArrayList<String> resultMinor = getTextFromXmlText(sigResponse, "ResultMinor");
+        ArrayList<String> errorMsg = getTextFromXmlText(sigResponse, "ResultMessage");
+
+        if (responseResult != null || resultMinor != null || errorMsg != null) {
+            System.out.println(" with following details:");
+        }
+
+        if (responseResult != null) {
+            for (String s : responseResult) {
+                if (s.length() > 0) {
+                    System.out.println(" Result major: " + s);
+                }
+            }
+        }
+
+        if (resultMinor != null) {
+            for (String s : resultMinor) {
+                if (s.length() > 0) {
+                    System.out.println(" Result minor: " + s);
+                }
+            }
+        }
+
+        if (errorMsg != null) {
+            for (String s : errorMsg) {
+                if (s.length() > 0) {
+                    System.out.println(" Result message: " + s);
+                }
+            }
+        }
+
+        // Newline
+        System.out.println("");
     }
 
 }
