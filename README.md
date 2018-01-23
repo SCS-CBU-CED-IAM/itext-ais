@@ -46,8 +46,7 @@ OPTIONS
                              - fr (français)
                              - it (italiano)
   -stepUpSerialNumber=VALUE  - Optional: Verify the MobileID / PwdOTP SerialNumber (16 chars; starting with 'MIDCHE' or 'SAS01')
-                            Document will only be signed if it matched the actual SerialNumber
-````                            
+                            Document will only be signed if it matched the actual SerialNumber                        
 
   ### ADOBE PDF SETTINGS ###
   -reason=VALUE           - Signing Reason
@@ -80,7 +79,7 @@ EXAMPLES
   [sign with on demand certificate and mobile id authorization]
     java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en
     java com.swisscom.ais.itext.SignPDF -v -type=sign -infile=sample.pdf -outfile=signed.pdf -dn='cn=Alice Smith,c=CH' -stepUpMsisdn=41792080350 -stepUpMsg='acme.com: Sign the PDF? (#TRANSID#)' -stepUpLang=en -stepUpSerialNumber=MIDCHE2EG8NAWUB3
-```
+````   
 
 #### Dependencies
 
