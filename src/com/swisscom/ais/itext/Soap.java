@@ -1046,9 +1046,9 @@ public class Soap {
      */
     private int getEstimatedSize(boolean isTimestampOnly) {
     	if (isTimestampOnly)
-    		return 10000;
+    		return 15000;
     	else 
-    		return 22000;
+    		return 30000;
     }
 
     /**
