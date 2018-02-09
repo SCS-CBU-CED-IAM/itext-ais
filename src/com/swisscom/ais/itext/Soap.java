@@ -849,7 +849,7 @@ public class Soap {
             }
 
             if (claimedIdentity != null) {
-                SOAPElement claimedIdentityElement = optionalInputsElement.addChildElement(new QName("ClaimedIdentity"));
+                SOAPElement claimedIdentityElement = optionalInputsElement.addChildElement("ClaimedIdentity", "");
                 SOAPElement claimedIdNameElement = claimedIdentityElement.addChildElement("Name");
                 claimedIdNameElement.addTextNode(claimedIdentity);
             }
@@ -965,7 +965,7 @@ public class Soap {
 
         // Claimed Identity
         if (claimedIdentity != null) {
-        	SOAPElement claimedIdentityElement = optionalInputsElement.addChildElement(new QName("ClaimedIdentity"));
+        	SOAPElement claimedIdentityElement = optionalInputsElement.addChildElement("ClaimedIdentity", "");
         	SOAPElement claimedIdNameElement = claimedIdentityElement.addChildElement("Name");
         	claimedIdNameElement.addTextNode(claimedIdentity);
         }
