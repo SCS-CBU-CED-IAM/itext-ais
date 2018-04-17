@@ -123,6 +123,16 @@ public class Soap {
      * If set to true verbose information will be print otherwise not
      */
     public static boolean _verboseMode = false;
+    
+    /**
+     * Constant for signature standard configuration property key
+     */
+    public static String SIGNATURE_STANDARD_PROPERTY = "SIGNATURE_STANDARD";
+    
+    /**
+     * Constant for revocation information type
+     */
+    public static String REVOCATION_INFO_TYPE = "REVOCATION_INFO_TYPE";
 
     /**
      * Constructor. Set parameter and load properties from file. Connection properties will be set and check if all needed
@@ -893,8 +903,24 @@ public class Soap {
             // PADES-attributes are signed and cannot be post-added to an already signed RFC3161-TimeStampToken
             // So the RevocationInformation (RI) of a trusted timestamp will be delivered via OptionalOutputs
          	// and they shall be added to the Adobe DSS in order to enable LTV for a Timestamp
-			SOAPElement addRevocationElement = optionalInputsElement.addChildElement("AddRevocationInformation", "sc");
-			addRevocationElement.addAttribute(new QName("Type"), "BOTH"); // CADES + PADES attributes
+			
+            // Revocation information
+            String signatureStandard = properties.getProperty(SIGNATURE_STANDARD_PROPERTY);
+            // If there is no signature standard defined in the properties, we don't set any. If not provided in request, it defaults to "CADES".
+            if (signatureStandard != null) {
+            	SOAPElement addSignatureStandardElement = optionalInputsElement.addChildElement("SignatureStandard", "sc");
+                addSignatureStandardElement.setValue(signatureStandard);
+            }
+            
+            
+            SOAPElement addRevocationElement = optionalInputsElement.addChildElement("AddRevocationInformation", "sc");
+			
+            // New from April 2018: there is no need to provide the revocation information type (see Reference Guide v.2.6)
+            // since if not provided, it will match the signature standard (if not defined, it defaults to CADES).
+            String revocationInfoType = properties.getProperty(REVOCATION_INFO_TYPE);
+            if (revocationInfoType != null) {
+            	addRevocationElement.addAttribute(new QName("Type"), revocationInfoType);
+            }
 
             if (responseId != null) {
                 SOAPElement responseIdElement = optionalInputsElement.addChildElement("ResponseID");
