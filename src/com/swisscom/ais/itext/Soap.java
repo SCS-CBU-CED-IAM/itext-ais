@@ -80,6 +80,11 @@ public class Soap {
     private static final String _TIMESTAMP_URN = "urn:ietf:rfc:3161";
 
     /**
+     * Constant for CMS urn
+     */
+    private static final String _CMS_URN = "urn:ietf:rfc:3369";
+
+    /**
      * Path to configuration file. Can also set in constructor
      */
     private String _cfgPath = "signpdf.properties";
@@ -907,7 +912,7 @@ public class Soap {
             // Revocation information
             String signatureStandard = properties.getProperty(SIGNATURE_STANDARD_PROPERTY);
             // If there is no signature standard defined in the properties, we don't set any. If not provided in request, it defaults to "CADES".
-            if (signatureStandard != null) {
+            if (signatureStandard != null && signatureType.equals(_CMS_URN)) {
             	SOAPElement addSignatureStandardElement = optionalInputsElement.addChildElement("SignatureStandard", "sc");
                 addSignatureStandardElement.setValue(signatureStandard);
             }
