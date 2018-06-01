@@ -130,16 +130,6 @@ public class Soap {
     public static boolean _verboseMode = false;
     
     /**
-     * Constant for signature standard configuration property key
-     */
-    public static String SIGNATURE_STANDARD_PROPERTY = "SIGNATURE_STANDARD";
-    
-    /**
-     * Constant for revocation information type
-     */
-    public static String REVOCATION_INFO_TYPE = "REVOCATION_INFO_TYPE";
-
-    /**
      * Constructor. Set parameter and load properties from file. Connection properties will be set and check if all needed
      * files exist
      *
@@ -711,7 +701,7 @@ public class Soap {
         	
 			pdfs[counter].createSignedPdf(Base64.decode(signatureHash), estimatedSize);
 			
-			if (timestampOnly)
+			// if (timestampOnly) - Removed since we need to add the TS RI for CMS signatures as well
 				pdfs[counter].addValidationInformation(ocsp, crl);;
 				
             counter++;
@@ -901,30 +891,29 @@ public class Soap {
                 addTimeStampelement.addAttribute(new QName("Type"), _TIMESTAMP_URN);
             }
 
+            // Set PADES as Signature Standard
+            // Signature standard only applies to CMS signatures
+            if (signatureType.equals(_CMS_URN)) {
+            	SOAPElement addSignatureStandardElement = optionalInputsElement.addChildElement("SignatureStandard", "sc");
+            	addSignatureStandardElement.setValue("PADES");
+            } 
+            
             // Always add revocation information
+            SOAPElement addRevocationElement = optionalInputsElement.addChildElement("AddRevocationInformation", "sc");
+			
             // Type="BOTH" means PADES+CADES
             // PADES = signed attribute according to PAdES
             // CADES = unsigned attribute according to CAdES
             // PADES-attributes are signed and cannot be post-added to an already signed RFC3161-TimeStampToken
             // So the RevocationInformation (RI) of a trusted timestamp will be delivered via OptionalOutputs
          	// and they shall be added to the Adobe DSS in order to enable LTV for a Timestamp
-			
-            // Revocation information
-            String signatureStandard = properties.getProperty(SIGNATURE_STANDARD_PROPERTY);
-            // If there is no signature standard defined in the properties, we don't set any. If not provided in request, it defaults to "CADES".
-            if (signatureStandard != null && signatureType.equals(_CMS_URN)) {
-            	SOAPElement addSignatureStandardElement = optionalInputsElement.addChildElement("SignatureStandard", "sc");
-                addSignatureStandardElement.setValue(signatureStandard);
-            }
             
-            
-            SOAPElement addRevocationElement = optionalInputsElement.addChildElement("AddRevocationInformation", "sc");
-			
-            // New from April 2018: there is no need to provide the revocation information type (see Reference Guide v.2.6)
-            // since if not provided, it will match the signature standard (if not defined, it defaults to CADES).
-            String revocationInfoType = properties.getProperty(REVOCATION_INFO_TYPE);
-            if (revocationInfoType != null) {
-            	addRevocationElement.addAttribute(new QName("Type"), revocationInfoType);
+            // For CMS signatures the revocation information type will match the signature standard (PADES)
+             
+            // Since for timestamping-only there is no signature standard, 
+            // the revocation type must be explicitely set
+            if (signatureType.equals(_TIMESTAMP_URN)) {
+            	addRevocationElement.addAttribute(new QName("Type"), "BOTH");
             }
 
             if (responseId != null) {
