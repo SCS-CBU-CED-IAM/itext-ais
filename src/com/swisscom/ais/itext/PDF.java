@@ -294,14 +294,15 @@ public class PDF {
 
 		// Add the CRL/OCSP validation information to the DSS Dictionary
 		boolean addVerification = false;
-		for (String sigName : stamper.getAcroFields().getSignatureNames()) {
+    // remove the for-statement because we want to add the recovation information to the latest signature only.
+//		for (String sigName : stamper.getAcroFields().getSignatureNames()) {
 			addVerification = validation.addVerification(
 					sigName, // Signature Name
 					ocspColl, // OCSP
 					crlColl, // CRL
 					null // certs
 					);
-		}
+//		}
 
 		validation.merge(); // Merges the validation with any validation already in the document or creates a new one.
 
