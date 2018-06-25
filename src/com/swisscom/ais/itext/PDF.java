@@ -261,7 +261,6 @@ public class PDF {
 					System.out.println("Next Update           : " + basicResp.getResponses()[0].getNextUpdate());
 					System.out.println("X509 Cert Issuer      : " + basicResp.getCerts()[0].getIssuer());
 					System.out.println("X509 Cert Subject     : " + basicResp.getCerts()[0].getSubject());
-					System.out.println("Responder ID X500Name : " + basicResp.getResponderId().toASN1Object().getName());
 					System.out.println("Certificate ID        : " + basicResp.getResponses()[0].getCertID().getSerialNumber().toString() + " ("
 							+ basicResp.getResponses()[0].getCertID().getSerialNumber().toString(16).toUpperCase() + ")");
 				}
