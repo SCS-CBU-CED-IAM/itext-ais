@@ -123,7 +123,7 @@ public class SignPDF {
             ais.runSigning(args);
         } catch (Exception e) {
             if (debugMode || verboseMode) {
-                ais.printError(e.getMessage().replaceAll("java.lang.Exception", "").length() > 0 ? e.getMessage() : "");
+                e.printStackTrace();
             }
             System.exit(1);
         }
@@ -151,6 +151,9 @@ public class SignPDF {
         }
 
         //start signing
+        if (propertyFilePath == null) 
+        	System.err.println("Property File not found. Add '-config=VALUE'-parameter with correct path");
+        
         Soap dss_soap = new Soap(verboseMode, debugMode, propertyFilePath);
         dss_soap.sign(signature, pdfToSign, signedPDF, signingReason, signingLocation, signingContact, certificationLevel, distinguishedName, msisdn, msg, language, serialnumber);
     }
