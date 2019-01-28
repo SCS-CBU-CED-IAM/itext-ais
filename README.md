@@ -157,3 +157,20 @@ If you're on Windows then use a semicolon ; instead of the colon :
 The latest JavaDoc is located in the `./doc` subfolder.
 
 Create the latest JavaDoc: `javadoc -windowtitle "Swisscom All-in Signing Service vx.y.z" -doctitle "<h1>Swisscom All-in Signing Service vx.y.z</h1>" -footer "Swisscom All-in Signing Service vx.y.z" -d <DOC> -private -sourcepath <SRC> com.swisscom.ais.itext`
+
+#### Certificate Handling
+
+PKCS12 certificate file consisting of public certificate and private key.
+
+Extraction: 
+1. Extract public client certificate:
+
+   `openssl pkcs12 -in <yourPKCS12>.p12 -clcerts -nokeys | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > public.crt`
+
+2. Extract password protected private key
+
+   `openssl pkcs12 -in <yourPKCS12>.p12 -nocerts -out encpriv.key`
+
+3. Extract decrypted private key
+
+   `openssl rsa -in encpriv.key -out decpriv.key`
