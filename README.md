@@ -1,6 +1,15 @@
 AIS: iText
 ============
 
+Ignore most of the original readme, it's not quite accurate
+
+```
+java com.swisscom.ais.itext.SignPDF -type=sign -infile=teebly.pdf -outfile=teebly-signed.pdf -config=signpdf.properties -dn="cn=TEST Max Muster, givenname=Max Heinrich, surname=Muster, o=TEST Swisscom (Schweiz) AG, ou=bluewin signer, c=CH, emailaddress=themax@bluewin.ch" -stepUpMsisdn=447708216475 -stepUpMsg="acme.com: Sign the PDF? (#TRANSID#)" -stepUpLang=en
+```
+
+Detailed notes in Miro's Dropbox.
+
+# Original readme below
 Java source code and command line tool to sign PDF with iText.
 
 ### Usage

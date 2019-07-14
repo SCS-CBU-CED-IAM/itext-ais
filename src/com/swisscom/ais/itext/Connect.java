@@ -29,7 +29,11 @@ import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder; 
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
+import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -361,13 +365,24 @@ public class Connect {
                     br = new BufferedReader(new FileReader(_privateKeyName));
                     pemParser = new PEMParser(br);
                     Object pemKeyPair = pemParser.readObject();
+                    String password= "test1234"; //System.getProperty("keystore.password");
                     if (pemKeyPair instanceof PEMEncryptedKeyPair) {
-                        String password=System.getProperty("keystore.password");
                         PEMDecryptorProvider decryptionProv = new JcePEMDecryptorProviderBuilder().build(password.toCharArray());
                         PEMKeyPair decryptedKeyPair = ((PEMEncryptedKeyPair) pemKeyPair).decryptKeyPair(decryptionProv);
                         privateKeyInfo = decryptedKeyPair.getPrivateKeyInfo();
                     }
-                    else {
+                    else if (pemKeyPair instanceof PKCS8EncryptedPrivateKeyInfo) {
+                        JceOpenSSLPKCS8DecryptorProviderBuilder jce = new JceOpenSSLPKCS8DecryptorProviderBuilder();
+                        jce.setProvider("BC");
+                        InputDecryptorProvider decProv = jce.build(password.toCharArray());
+                        try {
+                            privateKeyInfo = ((PKCS8EncryptedPrivateKeyInfo) pemKeyPair).decryptPrivateKeyInfo(decProv);
+                        } catch (PKCSException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+//                    }
+                    else{
                         privateKeyInfo = ((PEMKeyPair)pemKeyPair).getPrivateKeyInfo();
                     }
                 }

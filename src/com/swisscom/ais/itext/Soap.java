@@ -306,6 +306,7 @@ public class Soap {
             }
         
         } catch (Exception e) {
+            e.printStackTrace();
             throw new Exception(e);
         } finally {
             pdf.close();
@@ -896,7 +897,7 @@ public class Soap {
             if (signatureType.equals(_CMS_URN)) {
             	SOAPElement addSignatureStandardElement = optionalInputsElement.addChildElement("SignatureStandard", "sc");
             	addSignatureStandardElement.setValue("PADES");
-            } 
+            }
             
             // Always add revocation information
             SOAPElement addRevocationElement = optionalInputsElement.addChildElement("AddRevocationInformation", "sc");

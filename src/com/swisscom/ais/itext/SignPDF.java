@@ -73,7 +73,7 @@ public class SignPDF {
      * Person who signed the document
      */
     String signingContact = null;
-    
+
     /**
      * Certification Level
      */
@@ -98,7 +98,7 @@ public class SignPDF {
      * Language of the message which will be send to the mobile phone (or shown under the consent URL). Needed for signing with MobileID/PwdOTP.
      */
     String language = null;
-    
+
     /**
      * MobileID/PwdOTP Serial Number
      */
@@ -108,7 +108,7 @@ public class SignPDF {
      * Path for properties file. Needed if standard path will not be used.
      */
     String propertyFilePath = null;
-    
+
     /**
      * Main method to start AIS. This will parse given parameters e.g. input file, output file etc. and start signature
      * process. Furthermore this method prints error message if signing failed. See usage part in README to know how to
@@ -117,7 +117,9 @@ public class SignPDF {
      * @param args Arguments that will be parsed. See useage part in README for more details.
      */
     public static void main(String[] args) {
-
+//        https://stackoverflow.com/questions/35696497/calling-web-service-javax-net-ssl-sslexception-received-fatal-alert-protocol
+//        looking at the curl output when we successfully connect, this we can see what the cypher is
+        System.setProperty("https.protocols", "TLSv1.2");
         SignPDF ais = new SignPDF();
         try {
             ais.runSigning(args);
@@ -129,7 +131,7 @@ public class SignPDF {
         }
 
     }
-    
+
     /**
      * Parse given parameters, check if all necessary parameters exist and if there are not unnecessary parameters.
      * If there are problems with parameters application will abort with exit code 1.
@@ -151,13 +153,13 @@ public class SignPDF {
         }
 
         //start signing
-        if (propertyFilePath == null) 
+        if (propertyFilePath == null)
         	System.err.println("Property File not found. Add '-config=VALUE'-parameter with correct path");
-        
+
         Soap dss_soap = new Soap(verboseMode, debugMode, propertyFilePath);
         dss_soap.sign(signature, pdfToSign, signedPDF, signingReason, signingLocation, signingContact, certificationLevel, distinguishedName, msisdn, msg, language, serialnumber);
     }
-    
+
     private void printUsage() {
     	printUsage(null);
     }
@@ -178,7 +180,7 @@ public class SignPDF {
     	System.out.println();
     	System.out.println("  ### TIMESTAMP SIGNATURES ###");
     	System.out.println("  -type=timestamp         - Signature Type RFC 3161");
-    	System.out.println();  
+    	System.out.println();
     	System.out.println("  ### SIGNATURES WITH STATIC CERTIFICATES ###");
     	System.out.println("  -type=sign              - Signature Type RFC 3369");
     	System.out.println();
@@ -225,7 +227,7 @@ public class SignPDF {
     	System.out.println("  -v                      - Verbose output");
     	System.out.println("  -vv                     - More Verbose output");
     	System.out.println("  -config=VALUE           - Custom path to the properties file (signpdf.properties)");
-    	System.out.println();                           
+    	System.out.println();
     	System.out.println("EXAMPLES");
     	System.out.println();
     	System.out.println("  [timestamp]");
@@ -261,11 +263,11 @@ public class SignPDF {
      * @param args
      */
     private void parseParameters(String[] args) throws Exception {
-    	
+
     	// args can never be null. It would just be of size zero.
 
         String param;
-        boolean type = false, infile = false, outfile = false; 
+        boolean type = false, infile = false, outfile = false;
         for (int i = 0; i < args.length; i++) {
 
             param = args[i].toLowerCase();
@@ -356,7 +358,7 @@ public class SignPDF {
             	verboseMode = true;
             }
         }
-        
+
         // Check existence of mandatory arguments
         if (!type) {
         	printUsage("Mandatory option -type is missing");
@@ -364,8 +366,8 @@ public class SignPDF {
         	printUsage("Mandatory option -infile is missing");
         } else if (!outfile) {
         	printUsage("Mandatory option -outfile is missing");
-        } 
-        
+        }
+
     }
 
     /**
@@ -410,7 +412,7 @@ public class SignPDF {
             }
         }
     }
-    
+
     /**
      * Return a unique transaction id
      * @return transaction id
@@ -418,6 +420,6 @@ public class SignPDF {
     private String getNewTransactionId() {
     	// secure, easy but a little bit more expensive way to get a random alphanumeric string
         return new BigInteger(30, new SecureRandom()).toString(32);
-    }   
+    }
 
 }
