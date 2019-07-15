@@ -33,7 +33,10 @@ public class SqsMessageHandler {
         res.add(String.format("-infile=%s", infile.getAbsolutePath()));
         res.add(String.format("-outfile=%s-signed", infile.getAbsolutePath()));
         res.add(String.format("-config=%s", propsFile));
-        res.add("-dn=cn=TEST Max Muster, givenname=Max Heinrich, surname=Muster, o=TEST Swisscom (Schweiz) AG, ou=bluewin signer, c=CH, emailaddress=themax@bluewin.ch");
+        // TODO remove TEST prefix once we're live!
+        res.add(String.format("-dn=cn=TEST %s, givenname=%s, surname=%s, c=%s, emailaddress=%s",
+                sr.getFirstName(), sr.getFirstName(), sr.getLastName(),
+                sr.getCountryCode(), sr.getEmail()));
         res.add(String.format("-stepUpMsisdn=%s", sr.getPhoneNumber()));
         res.add("-stepUpMsg=teebly.co: Sign the PDF? (#TRANSID#)");
         res.add(String.format("-stepUpLang=%s", sr.getLanguage()));
@@ -43,6 +46,7 @@ public class SqsMessageHandler {
 
     public static void process(SignatureRequest sr) {
         System.out.println("Signer handling message from " + sr.getFileReference().toString());
+        WorkQueue.register(sr);
         File tempFile = new File(FileUtils.getTempDirectory(), System.currentTimeMillis() + "");
 
         // make sure the file is available locally

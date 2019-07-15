@@ -64,6 +64,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import co.teebly.signature.WorkQueue;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -200,7 +201,7 @@ public class Soap {
     public void sign(@Nonnull Include.Signature signatureType, @Nonnull String fileIn, @Nonnull String fileOut,
                      @Nullable String signingReason, @Nullable String signingLocation, @Nullable String signingContact,
                      @Nullable int certificationLevel, @Nullable String distinguishedName, @Nullable String msisdn, 
-                     @Nullable String msg, @Nullable String language, @Nullable String serialnumber)
+                     @Nullable String msg, @Nullable String language, @Nullable String serialnumber, String transactionId)
             throws Exception {
 
     	// LATER throw a specific Exception and not the generic one
@@ -270,7 +271,7 @@ public class Soap {
                 		serialnumber, 
                 		requestId,
                 		pollingInterval,
-                		pollRetries);
+                		pollRetries, transactionId);
             
             } else if (signatureType.equals(Include.Signature.ONDEMAND)) {
                 
@@ -334,7 +335,7 @@ public class Soap {
                                                   @Nonnull String distinguishedName, @Nonnull String phoneNumber, @Nonnull String certReqMsg,
                                                   @Nonnull String certReqMsgLang, @Nonnull String certReqSerialNumber, String requestId,
                                                   @Nonnull long pollingInterval,
-                                                  @Nonnull int pollRetries) throws Exception {
+                                                  @Nonnull int pollRetries, String transactionId) throws Exception {
         String[] additionalProfiles;
 
         
@@ -365,7 +366,7 @@ public class Soap {
                 certReqMsg, certReqMsgLang, certReqSerialNumber, null, requestId);
 
         // On-demand requests with step-up must be asynchronous
-        signDocumentAsync(sigReqMsg, serverURI, pdfs, claimedIdentity, pollingInterval, pollRetries, estimatedSize, "Base64Signature");
+        signDocumentAsync(sigReqMsg, serverURI, pdfs, claimedIdentity, pollingInterval, pollRetries, estimatedSize, "Base64Signature", transactionId);
     }
     
     /**
@@ -375,7 +376,6 @@ public class Soap {
      * @param hashAlgo           Hash algorithm to use for signature
      * @param signDate           Date when document(s) will be signed
      * @param serverURI          Server uri where to send the request
-     * @param mobileIDStepUp     certificate request profile
      * @param distinguishedName  Information about signer e.g. name, country etc.
      * @param claimedIdentity    Signers identity
      * @param requestId          An id for the request
@@ -531,7 +531,7 @@ public class Soap {
         ArrayList<String> ocsp = getTextFromXmlText(sigResponse, "sc:OCSP");
 
         ArrayList<String> signHashes = getTextFromXmlText(sigResponse, signNodeName);
-        signDocuments(signHashes, ocsp, crl, pdfs, estimatedSize, signNodeName.equals("RFC3161TimeStampToken"));
+        signDocuments(signHashes, ocsp, crl, pdfs, estimatedSize, signNodeName.equals("RFC3161TimeStampToken"), "");
     }
     
     /**
@@ -552,7 +552,7 @@ public class Soap {
     		@Nonnull long interval,
     		@Nonnull int retries,
             int estimatedSize, 
-            String signNodeName) throws Exception {
+            String signNodeName, String transactionId) throws Exception {
 
         String sigResponse = sendRequest(sigReqMsg, serverURI);
         ArrayList<String> responseResult = getTextFromXmlText(sigResponse, "ResultMajor");
@@ -570,6 +570,7 @@ public class Soap {
         // Is there a consent URL available in the response? 
         if (consentUrl_array != null && !consentUrl_array.isEmpty()) {
         	consentUrl = consentUrl_array.get(0);
+            WorkQueue.addConsentUrl(transactionId, consentUrl);
         }
 
         String pdfNames = "";
@@ -599,7 +600,7 @@ public class Soap {
             SOAPMessage pollReqMsg = createPendingMessage(RequestType.PendingRequest, claimedIdentity, responseId);
 
             // Start the polling
-            poll(pollReqMsg, serverURI, responseId, interval, retries, pdfs, estimatedSize, signNodeName);
+            poll(pollReqMsg, serverURI, responseId, interval, retries, pdfs, estimatedSize, signNodeName, transactionId);
         } else {
             System.out.print("FAILED to get successful AIS SigResponse for " + pdfNames);
         }
@@ -624,7 +625,7 @@ public class Soap {
     		@Nonnull int maxRetries,
     		@Nonnull PDF[] pdfs,
             int estimatedSize,
-            String signNodeName) throws Exception {
+            String signNodeName, String transactionId) throws Exception {
 
     	// Send poll request
     	String sigResponse = sendRequest(pollReqMsg, serverURI);
@@ -647,6 +648,7 @@ public class Soap {
     	}
 
     	boolean signingSuccess = sigResponse != null && responseResult != null && Include.RequestResult.Success.getResultUrn().equals(responseResult.get(0));
+        WorkQueue.setGotSignature(transactionId);
 
     	if (_debugMode || _verboseMode) {
 
@@ -683,7 +685,7 @@ public class Soap {
         ArrayList<String> ocsp = getTextFromXmlText(sigResponse, "sc:OCSP");
 
         ArrayList<String> signHashes = getTextFromXmlText(sigResponse, signNodeName);
-        signDocuments(signHashes, ocsp, crl, pdfs, estimatedSize, signNodeName.equals("RFC3161TimeStampToken"));
+        signDocuments(signHashes, ocsp, crl, pdfs, estimatedSize, signNodeName.equals("RFC3161TimeStampToken"), transactionId);
     }
 
     /**
@@ -696,15 +698,13 @@ public class Soap {
      * @param estimatedSize Estimated size of external signature
      * @throws Exception If adding signature to pdf failed.
      */
-    private void signDocuments(@Nonnull ArrayList<String> signHashes, ArrayList<String> ocsp, ArrayList<String> crl, @Nonnull PDF[] pdfs, int estimatedSize, boolean timestampOnly) throws Exception {
+    private void signDocuments(@Nonnull ArrayList<String> signHashes, ArrayList<String> ocsp, ArrayList<String> crl, @Nonnull PDF[] pdfs, int estimatedSize, boolean timestampOnly, String transactionId) throws Exception {
         int counter = 0;
         for (String signatureHash : signHashes) {
-        	
-			pdfs[counter].createSignedPdf(Base64.decode(signatureHash), estimatedSize);
-			
-			// if (timestampOnly) - Removed since we need to add the TS RI for CMS signatures as well
-				pdfs[counter].addValidationInformation(ocsp, crl);;
-				
+            pdfs[counter].createSignedPdf(Base64.decode(signatureHash), estimatedSize);
+            // if (timestampOnly) - Removed since we need to add the TS RI for CMS signatures as well
+            pdfs[counter].addValidationInformation(ocsp, crl);
+            WorkQueue.setAppliedSignature(transactionId);
             counter++;
         }
     }

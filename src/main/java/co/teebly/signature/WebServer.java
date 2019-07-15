@@ -16,6 +16,7 @@ public class WebServer {
 
         // this will check the environment variable "SENTRY_DSN"
         Sentry.init();
+        WorkQueue.init();
         try {
             SqsMessageHandler sqs = new SqsMessageHandler();
             sqs.run("teebly-queue-name"); // TODO set up
