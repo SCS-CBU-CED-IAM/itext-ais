@@ -21,17 +21,21 @@ public class WebServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(WebServer.class);
 
-    public static void downloadCredentials() throws IOException {
+    public static void initService() throws IOException {
         String bucketName = Env.getStringEnv(CERTIFICATES_BUCKET_ENV);
         String certName = Env.getStringEnv(PUBLIC_KEY_CERT_ENV);
         String pkName = Env.getStringEnv(PRIVATE_KEY_NAME_ENV);
         getPKPassword(); // fail early if it's not there
 
+        File workdir = new File("scratch");
+        if(!workdir.exists()) workdir.mkdirs();
         File targetFile = new File("_mycert.crt");
-        FileUtils.copyInputStreamToFile(S3.download(bucketName, certName), targetFile);
+        if (!targetFile.exists())
+            FileUtils.copyInputStreamToFile(S3.download(bucketName, certName), targetFile);
 
         targetFile = new File("_mycert.key");
-        FileUtils.copyInputStreamToFile(S3.download(bucketName, pkName), targetFile);
+        if (!targetFile.exists())
+            FileUtils.copyInputStreamToFile(S3.download(bucketName, pkName), targetFile);
     }
 
     public static String getPKPassword() throws IOException {
@@ -45,7 +49,7 @@ public class WebServer {
         // https://stackoverflow.com/questions/35696497/calling-web-service-javax-net-ssl-sslexception-received-fatal-alert-protocol
         // looking at the curl output when we successfully connect, this we can see what the cypher is
         System.setProperty("https.protocols", "TLSv1.2");
-        downloadCredentials();
+        initService();
 
         // this will check the environment variable "SENTRY_DSN"
         Sentry.init();

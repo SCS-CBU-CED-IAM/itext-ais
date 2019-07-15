@@ -5,8 +5,12 @@ import co.teebly.utils.files.FileReference;
 public class SignatureRequest {
     private String id, fullName, firstName, lastName, language, phoneNumber, countryCode, email;
     private FileReference fileReference;
+    private FileReference signatureAppearance;
+    private boolean advanced;
 
-    public SignatureRequest(String id, String fullName, String firstName, String lastName, String language, String phoneNumber, String countryCode, String email, FileReference fileReference) {
+    public SignatureRequest(String id, String fullName, String firstName, String lastName, String language,
+                            String phoneNumber, String countryCode, String email,
+                            FileReference fileReference, FileReference signatureAppearance, boolean advanced) {
         this.id = id;
         this.fullName = fullName;
         this.firstName = firstName;
@@ -16,6 +20,24 @@ public class SignatureRequest {
         this.countryCode = countryCode;
         this.email = email;
         this.fileReference = fileReference;
+        this.signatureAppearance = signatureAppearance;
+        this.advanced = advanced;
+    }
+
+    public FileReference getSignatureAppearance() {
+        return signatureAppearance;
+    }
+
+    public void setSignatureAppearance(FileReference signatureAppearance) {
+        this.signatureAppearance = signatureAppearance;
+    }
+
+    public boolean isAdvanced() {
+        return advanced;
+    }
+
+    public void setAdvanced(boolean advanced) {
+        this.advanced = advanced;
     }
 
     public String getEmail() {

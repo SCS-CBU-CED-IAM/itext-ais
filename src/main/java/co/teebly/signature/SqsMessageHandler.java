@@ -26,20 +26,26 @@ public class SqsMessageHandler {
 
     private static String[] prepareArgs(SignatureRequest sr, File infile) {
         String propsFile = SqsMessageHandler.class.getResource("/signpdf.properties").getFile();
-        // TODO customise
         ArrayList<String> res = new ArrayList<>();
         res.add("-vv");
-        res.add("-type=sign");
         res.add(String.format("-infile=%s", infile.getAbsolutePath()));
-        res.add(String.format("-outfile=%s-signed", infile.getAbsolutePath()));
+        res.add(String.format("-outfile=%s-signed.pdf", infile.getAbsolutePath()));
         res.add(String.format("-config=%s", propsFile));
-        // TODO remove TEST prefix once we're live!
-        res.add(String.format("-dn=cn=TEST %s, givenname=%s, surname=%s, c=%s, emailaddress=%s",
-                sr.getFullName(), sr.getFirstName(), sr.getLastName(),
-                sr.getCountryCode(), sr.getEmail()));
-        res.add(String.format("-stepUpMsisdn=%s", sr.getPhoneNumber()));
-        res.add("-stepUpMsg=teebly.co: Sign the PDF? (#TRANSID#)");
-        res.add(String.format("-stepUpLang=%s", sr.getLanguage()));
+        res.add("-type=sign");
+
+        if (sr.isAdvanced()) {
+            // TODO remove TEST prefix once we're live!
+            res.add(String.format("-dn=cn=TEST %s, givenname=%s, surname=%s, c=%s, emailaddress=%s",
+                    sr.getFullName(), sr.getFirstName(), sr.getLastName(),
+                    sr.getCountryCode(), sr.getEmail()));
+            res.add(String.format("-stepUpMsisdn=%s", sr.getPhoneNumber()));
+            res.add("-stepUpMsg=teebly.co: Sign the PDF? (#TRANSID#)");
+            res.add(String.format("-stepUpLang=%s", sr.getLanguage()));
+        } else {
+            res.add("-reason=Teebly");
+            res.add(String.format("-location=%s", sr.getCountryCode()));
+            res.add(String.format("-contact=%s", sr.getEmail()));
+        }
 
         return res.toArray(new String[0]);
     }
@@ -47,9 +53,9 @@ public class SqsMessageHandler {
     public static void process(SignatureRequest sr) {
         System.out.println("Signer handling message from " + sr.getFileReference().toString());
         WorkQueue.register(sr);
-        File tempFile = new File(FileUtils.getTempDirectory(), System.currentTimeMillis() + "");
+        File tempFile = new File(new File("scratch"), sr.getId());
 
-        // make sure the file is available locally
+        // make sure the files are available locally
         try (InputStream is = sr.getFileReference().getContent()) {
             FileUtils.copyInputStreamToFile(is, tempFile);
         } catch (IOException e) {

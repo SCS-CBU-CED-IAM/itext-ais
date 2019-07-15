@@ -22,6 +22,9 @@
 
 package com.swisscom.ais.itext;
 
+import co.teebly.signature.WorkQueue;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.*;
 import com.itextpdf.text.pdf.codec.Base64;
 import com.itextpdf.text.pdf.security.*;
@@ -142,7 +145,7 @@ public class PDF {
      * @return Hash of pdf as bytes
      * @throws Exception 
      */
-    public byte[] getPdfHash(@Nonnull Calendar signDate, int estimatedSize, @Nonnull String hashAlgorithm, boolean isTimestampOnly)
+    public byte[] getPdfHash(@Nonnull Calendar signDate, int estimatedSize, @Nonnull String hashAlgorithm, boolean isTimestampOnly, String transactionId)
             throws Exception {
 
         pdfReader = new PdfReader(inputFilePath, pdfPassword != null ? pdfPassword.getBytes() : null);
@@ -159,7 +162,17 @@ public class PDF {
         pdfSignature.setContact(signContact);
         pdfSignature.setDate(new PdfDate(signDate));
         pdfSignatureAppearance.setCryptoDictionary(pdfSignature);
-        
+		// TODO scale image like in the older lambda code
+		byte[] image = WorkQueue.getSignatureAppearance(transactionId);
+		if (image.length > 0) {
+			pdfSignatureAppearance.setImage(Image.getInstance(image));
+			// TODO configurable rect coords and page number like in older lambda
+			Rectangle signRect = new Rectangle(100, 750, 200, 850);
+			pdfSignatureAppearance.setVisibleSignature(signRect, 1, null);
+			pdfSignatureAppearance.setLayer4Text("Verified by Teebly");
+			pdfSignatureAppearance.setLayer2Text("");
+		}
+
 		// certify the pdf, if requested
 		if (certificationLevel > 0) {
 			// check: at most one certification per pdf is allowed
@@ -168,8 +181,8 @@ public class PDF {
 			pdfSignatureAppearance.setCertificationLevel(certificationLevel);        		 		
         }
         	
-        HashMap<PdfName, Integer> exc = new HashMap<PdfName, Integer>();
-        exc.put(PdfName.CONTENTS, new Integer(estimatedSize * 2 + 2));
+        HashMap<PdfName, Integer> exc = new HashMap<>();
+        exc.put(PdfName.CONTENTS, estimatedSize * 2 + 2);
 
         pdfSignatureAppearance.preClose(exc);
 
