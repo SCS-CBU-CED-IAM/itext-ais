@@ -24,26 +24,36 @@ public class SqsMessageHandler {
         }
     }
 
-    private static String[] prepareArgs(SignatureRequest sr) {
+    private static String[] prepareArgs(SignatureRequest sr, File infile) {
+        String propsFile = SqsMessageHandler.class.getResource("/signpdf.properties").getFile();
+        // TODO customise
         ArrayList<String> res = new ArrayList<>();
-        res.add("WAFFLES ETC"); // TODO add values
+        res.add("-vv");
+        res.add("-type=sign");
+        res.add(String.format("-infile=%s", infile.getAbsolutePath()));
+        res.add(String.format("-outfile=%s-signed", infile.getAbsolutePath()));
+        res.add(String.format("-config=%s", propsFile));
+        res.add("-dn=cn=TEST Max Muster, givenname=Max Heinrich, surname=Muster, o=TEST Swisscom (Schweiz) AG, ou=bluewin signer, c=CH, emailaddress=themax@bluewin.ch");
+        res.add(String.format("-stepUpMsisdn=%s", sr.getPhoneNumber()));
+        res.add("-stepUpMsg=teebly.co: Sign the PDF? (#TRANSID#)");
+        res.add(String.format("-stepUpLang=%s", sr.getLanguage()));
 
         return res.toArray(new String[0]);
     }
 
-    private static void process(SignatureRequest sr) {
+    public static void process(SignatureRequest sr) {
         System.out.println("Signer handling message from " + sr.getFileReference().toString());
-        File xmlFile = new File(FileUtils.getTempDirectory(), System.currentTimeMillis() + ".pdf");
+        File tempFile = new File(FileUtils.getTempDirectory(), System.currentTimeMillis() + "");
 
         // make sure the file is available locally
         try (InputStream is = sr.getFileReference().getContent()) {
-            FileUtils.copyInputStreamToFile(is, xmlFile);
+            FileUtils.copyInputStreamToFile(is, tempFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
 
-        String[] args = prepareArgs(sr);
+        String[] args = prepareArgs(sr, tempFile);
         handleMsg(args);
     }
 
