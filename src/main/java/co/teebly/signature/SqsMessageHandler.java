@@ -35,7 +35,7 @@ public class SqsMessageHandler {
         res.add(String.format("-config=%s", propsFile));
         // TODO remove TEST prefix once we're live!
         res.add(String.format("-dn=cn=TEST %s, givenname=%s, surname=%s, c=%s, emailaddress=%s",
-                sr.getFirstName(), sr.getFirstName(), sr.getLastName(),
+                sr.getFullName(), sr.getFirstName(), sr.getLastName(),
                 sr.getCountryCode(), sr.getEmail()));
         res.add(String.format("-stepUpMsisdn=%s", sr.getPhoneNumber()));
         res.add("-stepUpMsg=teebly.co: Sign the PDF? (#TRANSID#)");

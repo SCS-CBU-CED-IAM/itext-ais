@@ -365,7 +365,7 @@ public class Connect {
                     br = new BufferedReader(new FileReader(_privateKeyName));
                     pemParser = new PEMParser(br);
                     Object pemKeyPair = pemParser.readObject();
-                    String password= "test1234"; //System.getProperty("keystore.password");
+                    String password= System.getProperty("keystore.password");
                     if (pemKeyPair instanceof PEMEncryptedKeyPair) {
                         PEMDecryptorProvider decryptionProv = new JcePEMDecryptorProviderBuilder().build(password.toCharArray());
                         PEMKeyPair decryptedKeyPair = ((PEMEncryptedKeyPair) pemKeyPair).decryptKeyPair(decryptionProv);

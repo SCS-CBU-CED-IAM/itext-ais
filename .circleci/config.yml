@@ -3,7 +3,6 @@ jobs:
   build-job:
     docker:
       - image: circleci/openjdk:10-jdk-browsers
-      - image: circleci/mongo:latest
 
     steps:
       - checkout
