@@ -1,7 +1,8 @@
 package co.teebly.signature;
 
 import co.teebly.utils.aws.SQS;
-import com.google.gson.Gson;
+import co.teebly.utils.files.FileReference;
+import com.google.gson.*;
 import com.swisscom.ais.itext.SignPDF;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -10,10 +11,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 
-public class SqsMessageHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(SqsMessageHandler.class);
+public class SqsMessageProducer {
+    private static final Logger LOG = LoggerFactory.getLogger(SqsMessageProducer.class);
 
     public static void handleMsg(String[] args) {
         SignPDF ais = new SignPDF();
@@ -25,7 +28,7 @@ public class SqsMessageHandler {
     }
 
     private static String[] prepareArgs(SignatureRequest sr, File infile) {
-        String propsFile = SqsMessageHandler.class.getResource("/signpdf.properties").getFile();
+        String propsFile = SqsMessageProducer.class.getResource("/signpdf.properties").getFile();
         ArrayList<String> res = new ArrayList<>();
         res.add("-vv");
         res.add(String.format("-infile=%s", infile.getAbsolutePath()));
@@ -64,14 +67,31 @@ public class SqsMessageHandler {
 
 
         String[] args = prepareArgs(sr, tempFile);
-        handleMsg(args);
+        handleMsg(args); // TODO restore
+//        try {
+//            Thread.sleep(10000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     public void run(String queueName) {
-        Gson gson = new Gson();
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(FileReference.class, (JsonDeserializer<FileReference>) (json, typeOfT, context) -> {
+            try {
+                return FileReference.createFileReference(new URI(json.getAsString()));
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+            return null;
+
+        });
+        Gson gson = gsonBuilder.create();
         SQS.readInThread(queueName, m -> {
+            System.out.println("Got a message");
             SignatureRequest sr = gson.fromJson(m.getBody().trim(), SignatureRequest.class);
-            process(sr);
+            process(sr); // TODO enqueue instead and let things run in parallel
+//            WorkQueue.enqueue(sr);
             return true;
         });
     }

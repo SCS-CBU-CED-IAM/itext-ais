@@ -27,7 +27,7 @@ public class TestSign {
 //                "Musterman", "en", "447708216475", "GB",
 //                "miro@teebly.co", getRef("teebly.pdf"), getRef("test.png"), true);
 //
-//        SqsMessageHandler.process(sr);
+//        SqsMessageProducer.process(sr);
 //    }
 
     @Test
@@ -38,6 +38,6 @@ public class TestSign {
                 "miro@teebly.co", getRef("teebly.pdf"), getRef("test.png"),
                 false);
 
-        SqsMessageHandler.process(sr);
+        SqsMessageProducer.process(sr);
     }
 }

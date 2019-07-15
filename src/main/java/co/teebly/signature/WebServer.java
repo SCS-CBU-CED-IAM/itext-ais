@@ -57,7 +57,7 @@ public class WebServer {
 
         String queueName = Env.getStringEnv(QUEUE_NAME_ENV, "teebly-dev-qualified-signatures", false);
         try {
-            SqsMessageHandler sqs = new SqsMessageHandler();
+            SqsMessageProducer sqs = new SqsMessageProducer();
             sqs.run(queueName);
         } catch (Throwable e) {
             Sentry.capture(e);

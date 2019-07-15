@@ -7,6 +7,10 @@ public class SignatureRequest {
     private FileReference fileReference;
     private FileReference signatureAppearance;
     private boolean advanced;
+    // TODO stuff below is from the older lambda, to keep the input format consistent
+    private int sigX, sigY, sigWidth, page;
+    private String sourcePdf, sourcePdfBucket, signFile, signBucket, docId;
+    private boolean debug;
 
     public SignatureRequest(String id, String fullName, String firstName, String lastName, String language,
                             String phoneNumber, String countryCode, String email,
