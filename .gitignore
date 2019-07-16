@@ -16,7 +16,7 @@ Thumbs.db
 ###################
 *~
 *.kjs
-*.pdf
+#*.pdf
 *.p12
 *.p7s
 run.sh
