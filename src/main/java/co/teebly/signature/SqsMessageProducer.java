@@ -27,7 +27,7 @@ public class SqsMessageProducer {
         }
     }
 
-    private static String[] prepareArgs(SignatureRequest sr, File infile) {
+    public static String[] prepareArgs(SignatureRequest sr, File infile) {
         String propsFile = SqsMessageProducer.class.getResource("/signpdf.properties").getFile();
         ArrayList<String> res = new ArrayList<>();
         res.add("-vv");
