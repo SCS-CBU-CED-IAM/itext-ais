@@ -29,3 +29,8 @@ mycert-preprod*
 .idea/*
 *.iml
 
+/.classpath
+/.project
+/.settings
+/bin
+/target
