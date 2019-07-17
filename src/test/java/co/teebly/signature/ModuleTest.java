@@ -11,6 +11,7 @@ import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.swisscom.ais.itext.SignPDF;
+import co.teebly.utils.UX;
 import co.teebly.utils.files.FileReference;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -22,6 +23,9 @@ public class ModuleTest {
 
   private static final File T01_PDF_IN_FILE =
       new File(_DIR, "Reference_Guide-All-in-Signing-Service-en.pdf");
+
+  private static final File T01_PDF_OUT_FILE =
+      new File(_DIR, "Reference_Guide-All-in-Signing-Service-en.pdf-signed.pdf");
 
   private static final String T01_PDF_IN_STR =
       "file:///src/test/resources/Reference_Guide-All-in-Signing-Service-en.pdf";
@@ -52,6 +56,7 @@ public class ModuleTest {
 
   @Test
   public void test_01() throws Exception {
+    UX.rm_f(T01_PDF_OUT_FILE);
     SignatureRequest sr = new SignatureRequest( //
         "sig.request.54321", //
         "Max Musterman", //
