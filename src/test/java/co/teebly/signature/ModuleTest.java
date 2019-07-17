@@ -24,13 +24,18 @@ public class ModuleTest {
   private static final File T01_PDF_IN_FILE =
       new File(_DIR, "Reference_Guide-All-in-Signing-Service-en.pdf");
 
-  private static final File T01_PDF_OUT_FILE =
-      new File(_DIR, "Reference_Guide-All-in-Signing-Service-en.pdf-signed.pdf");
-
   private static final String T01_PDF_IN_STR =
       "file:///src/test/resources/Reference_Guide-All-in-Signing-Service-en.pdf";
 
   private static URI T01_PDF_IN_URL;
+
+  private static final File T01_PDF_OUT_FILE =
+      new File(_DIR, "Reference_Guide-All-in-Signing-Service-en.pdf-signed.pdf");
+
+  private static final String T01_PDF_OUT_STR =
+      "file:///target/test-classes/Reference_Guide-All-in-Signing-Service-en.pdf-signed.pdf";
+
+  private static URI T01_PDF_OUT_URL;
 
   private static final String T01_PNG_IN_STR = "file:///src/test/resources/test.png";
 
@@ -46,6 +51,12 @@ public class ModuleTest {
       T01_PNG_IN_URL = new URI(T01_PNG_IN_STR);
     } catch (URISyntaxException e1) {
       throw new IllegalStateException("Failed to create URL using string '" + T01_PNG_IN_STR + "'");
+    }
+    try {
+      T01_PDF_OUT_URL = new URI(T01_PDF_OUT_STR);
+    } catch (URISyntaxException e1) {
+      throw new IllegalStateException(
+          "Failed to create URL using string '" + T01_PDF_OUT_STR + "'");
     }
   }
 
@@ -67,6 +78,7 @@ public class ModuleTest {
         "GB", //
         "miro@teebly.co", //
         FileReference.createFileReference(T01_PDF_IN_URL), //
+        FileReference.createFileReference(T01_PDF_OUT_URL), //
         // getRef("teebly.pdf"), //
         FileReference.createFileReference(T01_PNG_IN_URL), //
         // getRef("test.png"), //
