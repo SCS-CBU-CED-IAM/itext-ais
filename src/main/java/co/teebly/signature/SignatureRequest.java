@@ -1,118 +1,182 @@
 package co.teebly.signature;
 
+import java.util.Objects;
 import co.teebly.utils.files.FileReference;
 
 public class SignatureRequest {
-    private String id, fullName, firstName, lastName, language, phoneNumber, countryCode, email;
-    private FileReference fileReference;
-    private FileReference signatureAppearance;
-    private boolean advanced;
-    // TODO stuff below is from the older lambda, to keep the input format consistent
-    private int sigX, sigY, sigWidth, page;
-    private String sourcePdf, sourcePdfBucket, signFile, signBucket, docId;
-    private boolean debug;
 
-    public SignatureRequest(String id, String fullName, String firstName, String lastName, String language,
-                            String phoneNumber, String countryCode, String email,
-                            FileReference fileReference, FileReference signatureAppearance, boolean advanced) {
-        this.id = id;
-        this.fullName = fullName;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.language = language;
-        this.phoneNumber = phoneNumber;
-        this.countryCode = countryCode;
-        this.email = email;
-        this.fileReference = fileReference;
-        this.signatureAppearance = signatureAppearance;
-        this.advanced = advanced;
-    }
+  public static SignatureRequest fromJson(String json) {
+    Objects.requireNonNull(json, "Supplied parameter 'json' is null");
+    return Messages.GSON.fromJson(json, SignatureRequest.class);
+  }
 
-    public FileReference getSignatureAppearance() {
-        return signatureAppearance;
-    }
+  private boolean advanced;
 
-    public void setSignatureAppearance(FileReference signatureAppearance) {
-        this.signatureAppearance = signatureAppearance;
-    }
+  private String countryCode;
 
-    public boolean isAdvanced() {
-        return advanced;
-    }
+  private boolean debug; // Legacy
 
-    public void setAdvanced(boolean advanced) {
-        this.advanced = advanced;
-    }
+  private int docId; // Legacy
 
-    public String getEmail() {
-        return email;
-    }
+  private String email;
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+  private FileReference fileReference;
 
-    public String getCountryCode() {
-        return countryCode;
-    }
+  private FileReference fileReferenceSigned;
 
-    public void setCountryCode(String countryCode) {
-        this.countryCode = countryCode;
-    }
+  private String firstName;
 
-    public String getFullName() {
-        return fullName;
-    }
+  private String fullName;
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
+  private String id;
 
-    public String getId() {
-        return id;
-    }
+  private String language;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  private String lastName;
 
-    public FileReference getFileReference() {
-        return fileReference;
-    }
+  private int page; // Legacy
 
-    public void setFileReference(FileReference fileReference) {
-        this.fileReference = fileReference;
-    }
+  private String phoneNumber;
 
-    public String getFirstName() {
-        return firstName;
-    }
+  private FileReference signatureAppearance;
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
+  private int signBucket; // Legacy
 
-    public String getLastName() {
-        return lastName;
-    }
+  private int signFile; // Legacy
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+  private int sigWidth; // Legacy
 
-    public String getLanguage() {
-        return language;
-    }
+  private int sigX; // Legacy
 
-    public void setLanguage(String language) {
-        this.language = language;
-    }
+  private int sigY; // Legacy
 
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
+  private String sourcePdf; // Legacy
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
+  private int sourcePdfBucket; // Legacy
+
+  public SignatureRequest(SignatureRequest other) {
+    this.id = other.id;
+    this.fullName = other.fullName;
+    this.firstName = other.firstName;
+    this.lastName = other.lastName;
+    this.language = other.language;
+    this.phoneNumber = other.phoneNumber;
+    this.countryCode = other.countryCode;
+    this.email = other.email;
+    this.fileReference = other.fileReference;
+    this.fileReferenceSigned = other.fileReferenceSigned;
+    this.signatureAppearance = other.signatureAppearance;
+    this.advanced = other.advanced;
+  }
+
+  public SignatureRequest(String id, String fullName, String firstName, String lastName,
+      String language, String phoneNumber, String countryCode, String email,
+      FileReference fileReference, FileReference fileReferenceSigned,
+      FileReference signatureAppearance, boolean advanced) {
+    this.id = id;
+    this.fullName = fullName;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.language = language;
+    this.phoneNumber = phoneNumber;
+    this.countryCode = countryCode;
+    this.email = email;
+    this.fileReference = fileReference;
+    this.fileReferenceSigned = fileReferenceSigned;
+    this.signatureAppearance = signatureAppearance;
+    this.advanced = advanced;
+  }
+
+  public String getCountryCode() {
+    return countryCode;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public FileReference getFileReference() {
+    return fileReference;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public String getFullName() {
+    return fullName;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getLanguage() {
+    return language;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public String getPhoneNumber() {
+    return phoneNumber;
+  }
+
+  public FileReference getSignatureAppearance() {
+    return signatureAppearance;
+  }
+
+  public boolean isAdvanced() {
+    return advanced;
+  }
+
+  public void setAdvanced(boolean advanced) {
+    this.advanced = advanced;
+  }
+
+  public void setCountryCode(String countryCode) {
+    this.countryCode = countryCode;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public void setFileReference(FileReference fileReference) {
+    this.fileReference = fileReference;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public void setFullName(String fullName) {
+    this.fullName = fullName;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public void setLanguage(String language) {
+    this.language = language;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+
+  public void setPhoneNumber(String phoneNumber) {
+    this.phoneNumber = phoneNumber;
+  }
+
+  public void setSignatureAppearance(FileReference signatureAppearance) {
+    this.signatureAppearance = signatureAppearance;
+  }
+
+  @Override
+  public String toString() {
+    return Messages.GSON.toJson(this);
+  }
 }
