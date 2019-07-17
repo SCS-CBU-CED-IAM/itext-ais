@@ -20,6 +20,8 @@ public class MessagesTest {
   private static SignatureRequest createSignatureRequest() throws URISyntaxException {
     FileReference fileRefIn =
         FileReference.createFileReference(new URI("file:///some/dir/some-file-in.pdf"));
+    FileReference fileRefSigned =
+        FileReference.createFileReference(new URI("file:///some/dir/some-file-out.pdf"));
     FileReference fileRefSignatureAppearance = FileReference
         .createFileReference(new URI("file:///some/dir/some-file-signature-appearance.png"));
     return new SignatureRequest( //
@@ -32,6 +34,7 @@ public class MessagesTest {
         "GB", //
         "miro@teebly.co", //
         fileRefIn, //
+        fileRefSigned, //
         fileRefSignatureAppearance, //
         false //
     );
