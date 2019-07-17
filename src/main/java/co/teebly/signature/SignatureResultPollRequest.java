@@ -30,10 +30,11 @@ public class SignatureResultPollRequest extends SignatureRequest {
 
   public SignatureResultPollRequest(String id, String fullName, String firstName, String lastName,
       String language, String phoneNumber, String countryCode, String email,
-      FileReference fileReference, FileReference signatureAppearance, boolean advanced,
-      Date timeOut, long sleepInterval, String reportHandle) {
+      FileReference fileReference, FileReference fileReferenceSigned,
+      FileReference signatureAppearance, boolean advanced, Date timeOut, long sleepInterval,
+      String reportHandle) {
     super(id, fullName, firstName, lastName, language, phoneNumber, countryCode, email,
-        fileReference, signatureAppearance, advanced);
+        fileReference, fileReferenceSigned, signatureAppearance, advanced);
     this.timeOut = Objects.requireNonNull(timeOut, "Supplied parameter 'timeOut' is null");
     this.sleepInterval = sleepInterval;
     this.reportHandle =
