@@ -27,7 +27,7 @@
 package com.swisscom.ais.itext;
 
 import javax.annotation.*;
-
+import co.teebly.signature.Worker;
 import java.io.File;
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -144,6 +144,8 @@ public class SignPDF {
      * @param params argument list as described for main metho
      */
     public void runSigning(String[] params, String transactionId) throws Exception {
+      
+        Worker.get().setTransactionId(transactionId);
 
         parseParameters(params);
         checkNecessaryParams();
