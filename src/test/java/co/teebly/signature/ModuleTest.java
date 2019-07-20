@@ -108,6 +108,7 @@ public class ModuleTest {
         FileReference.createFileReference(T01_PDF_IN_URI), //
         FileReference.createFileReference(T01_PDF_OUT_URI), //
         FileReference.createFileReference(T01_PNG_IN_URI), //
+        "theUserId", //
         false //
     );
     // WorkQueue.register(sr);
