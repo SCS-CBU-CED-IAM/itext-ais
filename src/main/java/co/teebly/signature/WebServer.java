@@ -2,6 +2,8 @@ package co.teebly.signature;
 
 import co.teebly.utils.aws.S3;
 import co.teebly.utils.conf.Env;
+import co.teebly.utils.mongo.TeeblyMongoDatabase;
+import co.teebly.utils.mongo.TeeblyMongoSubsystem;
 import io.sentry.Sentry;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ public class WebServer {
     private static final Logger LOG = LoggerFactory.getLogger(WebServer.class);
 
     public static void initService() throws IOException {
+        TeeblyMongoDatabase.create(TeeblyMongoSubsystem.TEEBLY);
         String bucketName = Env.getStringEnv(CERTIFICATES_BUCKET_ENV);
         String certName = Env.getStringEnv(PUBLIC_KEY_CERT_ENV);
         String pkName = Env.getStringEnv(PRIVATE_KEY_NAME_ENV);
