@@ -56,7 +56,9 @@ public class SqsMessageProducer {
   }
 
   public static void process(SignatureRequest sr) throws IOException {
-    
+
+    check(sr);
+
     System.out.println("Signer handling message from " + sr.getFileReference().toString());
     Worker.set(new Worker(sr));
 
@@ -82,6 +84,30 @@ public class SqsMessageProducer {
     } finally {
       Worker.remove();
     }
+  }
+
+  private static void check(SignatureRequest sr) {
+    LOG.info("Checking " + sr);
+    StringBuilder err = new StringBuilder();
+    if (sr.getId() == null) {
+      errAppend(err, "id is null");
+    }
+    if (sr.getFileReference() == null) {
+      errAppend(err, "fileReference is null");
+    }
+    if (sr.getFileReferenceSigned() == null) {
+      errAppend(err, "fileReferenceSigned is null");
+    }
+    if (err.length() > 0) {
+      throw new IllegalArgumentException("Errors in SignatureRequest: ");
+    }
+  }
+
+  private static void errAppend(StringBuilder err, String string) {
+    if (err.length() > 0) {
+      err.append(", ");
+    }
+    err.append(string);
   }
 
   public void run(String queueName) {
