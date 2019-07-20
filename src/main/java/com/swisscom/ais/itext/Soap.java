@@ -64,7 +64,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import co.teebly.signature.WorkQueue;
+import co.teebly.signature.Worker;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -216,8 +216,10 @@ public class Soap {
 
         PDF pdf = new PDF(fileIn, fileOut, null, signingReason, signingLocation, signingContact, certificationLevel);
 
+        boolean ok = true;
         try {
             String requestId = getRequestId();
+            Worker.get().setRequestId(requestId);
 
             if (msisdn != null && msg != null && language != null && signatureType.equals(Include.Signature.ONDEMAND)) {
             	
@@ -307,10 +309,14 @@ public class Soap {
             }
         
         } catch (Exception e) {
+            ok = false;
             e.printStackTrace();
             throw new Exception(e);
         } finally {
             pdf.close();
+            if (ok) {
+              Worker.get().uploadSignedPdf(new File(fileOut));
+            }
         }
     }
 
@@ -570,7 +576,7 @@ public class Soap {
         // Is there a consent URL available in the response? 
         if (consentUrl_array != null && !consentUrl_array.isEmpty()) {
         	consentUrl = consentUrl_array.get(0);
-            WorkQueue.addConsentUrl(transactionId, consentUrl);
+            Worker.get().addConsentUrl(consentUrl);
         }
 
         String pdfNames = "";
@@ -648,7 +654,6 @@ public class Soap {
     	}
 
     	boolean signingSuccess = sigResponse != null && responseResult != null && Include.RequestResult.Success.getResultUrn().equals(responseResult.get(0));
-        WorkQueue.setGotSignature(transactionId);
 
     	if (_debugMode || _verboseMode) {
 
@@ -679,6 +684,7 @@ public class Soap {
         if (!signingSuccess) {
             throw new Exception();
         }
+        Worker.get().setGotSignature();
 
         // Retrieve the Revocation Information (OCSP/CRL validation information)
         ArrayList<String> crl = getTextFromXmlText(sigResponse, "sc:CRL");
@@ -704,7 +710,7 @@ public class Soap {
             pdfs[counter].createSignedPdf(Base64.decode(signatureHash), estimatedSize);
             // if (timestampOnly) - Removed since we need to add the TS RI for CMS signatures as well
             pdfs[counter].addValidationInformation(ocsp, crl);
-            WorkQueue.setAppliedSignature(transactionId);
+            Worker.get().setAppliedSignature();
             counter++;
         }
     }
