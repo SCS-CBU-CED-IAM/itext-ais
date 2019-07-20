@@ -53,7 +53,6 @@ public class WebServer {
 
         // this will check the environment variable "SENTRY_DSN"
         Sentry.init();
-        WorkQueue.init();
 
         String queueName = Env.getStringEnv(QUEUE_NAME_ENV, "teebly-dev-qualified-signatures", false);
         try {
