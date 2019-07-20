@@ -62,6 +62,8 @@ public class SignatureRequest {
 
   private int sourcePdfBucket; // Legacy
 
+  private String userId;
+
   public SignatureRequest(SignatureRequest other) {
     this.id = other.id;
     this.fullName = other.fullName;
@@ -74,13 +76,14 @@ public class SignatureRequest {
     this.fileReference = other.fileReference;
     this.fileReferenceSigned = other.fileReferenceSigned;
     this.signatureAppearance = other.signatureAppearance;
+    this.userId = other.userId;
     this.advanced = other.advanced;
   }
 
   public SignatureRequest(String id, String fullName, String firstName, String lastName,
       String language, String phoneNumber, String countryCode, String email,
       FileReference fileReference, FileReference fileReferenceSigned,
-      FileReference signatureAppearance, boolean advanced) {
+      FileReference signatureAppearance, String userId, boolean advanced) {
     this.id = id;
     this.fullName = fullName;
     this.firstName = firstName;
@@ -92,6 +95,7 @@ public class SignatureRequest {
     this.fileReference = fileReference;
     this.fileReferenceSigned = fileReferenceSigned;
     this.signatureAppearance = signatureAppearance;
+    this.userId = userId;
     this.advanced = advanced;
   }
 
@@ -137,6 +141,10 @@ public class SignatureRequest {
 
   public FileReference getSignatureAppearance() {
     return signatureAppearance;
+  }
+
+  public String getUserId() {
+    return userId;
   }
 
   public boolean isAdvanced() {
@@ -189,6 +197,10 @@ public class SignatureRequest {
 
   public void setSignatureAppearance(FileReference signatureAppearance) {
     this.signatureAppearance = signatureAppearance;
+  }
+
+  public void setUserId(String userId) {
+    this.userId = userId;
   }
 
   @Override
