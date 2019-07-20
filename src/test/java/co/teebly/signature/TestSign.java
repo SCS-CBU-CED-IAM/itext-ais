@@ -36,7 +36,7 @@ public class TestSign {
                 "sig.request.54321", "Max Musterman", "Maximilian Rudolph",
                 "Musterman", "en", "447708216475", "GB",
                 "miro@teebly.co", getRef("teebly.pdf"), null, getRef("test.png"),
-                false);
+                "theUserId", false);
 
         SqsMessageProducer.process(sr);
     }
