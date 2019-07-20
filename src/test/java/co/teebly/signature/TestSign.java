@@ -3,7 +3,7 @@ package co.teebly.signature;
 import co.teebly.utils.files.FileReference;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -31,7 +31,7 @@ public class TestSign {
 //    }
 
     @Test
-    public void test_org_signature() throws URISyntaxException {
+    public void test_org_signature() throws URISyntaxException, IOException {
         SignatureRequest sr = new SignatureRequest(
                 "sig.request.54321", "Max Musterman", "Maximilian Rudolph",
                 "Musterman", "en", "447708216475", "GB",
