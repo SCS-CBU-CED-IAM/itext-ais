@@ -22,7 +22,7 @@
 
 package com.swisscom.ais.itext;
 
-import co.teebly.signature.WorkQueue;
+import co.teebly.signature.Worker;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.*;
@@ -163,8 +163,8 @@ public class PDF {
         pdfSignature.setDate(new PdfDate(signDate));
         pdfSignatureAppearance.setCryptoDictionary(pdfSignature);
 		// TODO scale image like in the older lambda code
-		byte[] image = WorkQueue.getSignatureAppearance(transactionId);
-		if (image.length > 0) {
+		byte[] image = Worker.get().getImageBytes();
+		if (image != null) {
 			pdfSignatureAppearance.setImage(Image.getInstance(image));
 			// TODO configurable rect coords and page number like in older lambda
 			Rectangle signRect = new Rectangle(100, 750, 200, 850);
