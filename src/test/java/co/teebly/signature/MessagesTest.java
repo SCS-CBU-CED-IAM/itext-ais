@@ -36,6 +36,7 @@ public class MessagesTest {
         fileRefIn, //
         fileRefSigned, //
         fileRefSignatureAppearance, //
+        "theUserId", //
         false //
     );
   }
