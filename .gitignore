@@ -34,3 +34,5 @@ mycert-preprod*
 /.settings
 /bin
 /target
+/_mycert.crt
+/_mycert.key
