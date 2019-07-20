@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Objects;
+import javax.xml.bind.annotation.XmlEnumValue;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.slf4j.Logger;
@@ -21,16 +22,45 @@ import co.teebly.utils.mongo.TeeblyMongoSubsystem;
 public class Worker {
 
   public enum PdfSignStatus {
-    APPLIED_SIGNATURE, ERROR, FINISHED_OK, GOT_CONSENT_URL, GOT_SIGNATURE, SIGN_PROCESS_STARTED;
+
+    @XmlEnumValue("appliedSignature")
+    APPLIED_SIGNATURE("appliedSignature"),
+
+    @XmlEnumValue("error")
+    ERROR("error"),
+
+    @XmlEnumValue("signed")
+    FINISHED_OK("signed"),
+
+    @XmlEnumValue("gotConsentUrl")
+    GOT_CONSENT_URL("gotConsentUrl"),
+
+    @XmlEnumValue("gotSignature")
+    GOT_SIGNATURE("gotSignature"),
+
+    @XmlEnumValue("signProcessStarted")
+    SIGN_PROCESS_STARTED("signProcessStarted");
+
+    private String xmlValue;
+
+    private PdfSignStatus(String xmlValue) {
+      this.xmlValue = xmlValue;
+    }
+
+    public String getXmlValue() {
+      return xmlValue;
+    }
   }
 
-  public static final String ATTR_PDF_SIGN_CONSENT_URL = "pdfSignConsentUrl";
+  public static final String ATTR_PDF_SIGN_USER_ID = "signatures.[0].userId";
 
-  public static final String ATTR_PDF_SIGN_STATUS = "pdfSignStatus";
+  public static final String ATTR_PDF_SIGN_CONSENT_URL = "signatures.[0].goToUrl";
 
-  public static final String ATTR_PDF_SIGN_STATUS_MESSAGE = "pdfSignStatusMessage";
+  public static final String ATTR_PDF_SIGN_STATUS = "signatures.[0].status";
 
-  public static final String ATTR_PDF_SIGN_STATUS_TS = "pdfSignStatusTs";
+  public static final String ATTR_PDF_SIGN_STATUS_MESSAGE = "signatures.[0].message";
+
+  public static final String ATTR_PDF_SIGN_STATUS_TS = "signatures.[0].timestamp";
 
   private static final Logger LOG = LoggerFactory.getLogger(Worker.class);
 
@@ -80,9 +110,12 @@ public class Worker {
 
   private Document mongoCreateUpdates(PdfSignStatus pdfSignStatus, String pdfSignStatusMessage) {
     Document ret = new Document();
-    ret.put(ATTR_PDF_SIGN_STATUS, pdfSignStatus.name());
+    ret.put(ATTR_PDF_SIGN_STATUS, pdfSignStatus.getXmlValue());
     ret.put(ATTR_PDF_SIGN_STATUS_TS, new Date());
-    ret.put(ATTR_PDF_SIGN_STATUS_MESSAGE, pdfSignStatusMessage);
+    // ret.put(ATTR_PDF_SIGN_STATUS_MESSAGE, pdfSignStatusMessage);
+    if (signatureRequest.getUserId() != null) {
+      ret.put(ATTR_PDF_SIGN_USER_ID, signatureRequest.getUserId());
+    }
     return ret;
   }
 
