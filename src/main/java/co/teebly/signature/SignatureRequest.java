@@ -1,9 +1,17 @@
 package co.teebly.signature;
 
+import java.nio.charset.Charset;
 import java.util.Objects;
 import co.teebly.utils.files.FileReference;
 
 public class SignatureRequest {
+
+  private static final Charset UTF8 = Charset.forName("UTF-8");
+
+  public static SignatureRequest fromJson(byte[] json) {
+    Objects.requireNonNull(json, "Supplied parameter 'json' is null");
+    return fromJson(new String(json, UTF8));
+  }
 
   public static SignatureRequest fromJson(String json) {
     Objects.requireNonNull(json, "Supplied parameter 'json' is null");
@@ -99,6 +107,10 @@ public class SignatureRequest {
     return fileReference;
   }
 
+  public FileReference getFileReferenceSigned() {
+    return fileReferenceSigned;
+  }
+
   public String getFirstName() {
     return firstName;
   }
@@ -145,6 +157,10 @@ public class SignatureRequest {
 
   public void setFileReference(FileReference fileReference) {
     this.fileReference = fileReference;
+  }
+
+  public void setFileReferenceSigned(FileReference fileReferenceSigned) {
+    this.fileReferenceSigned = fileReferenceSigned;
   }
 
   public void setFirstName(String firstName) {
