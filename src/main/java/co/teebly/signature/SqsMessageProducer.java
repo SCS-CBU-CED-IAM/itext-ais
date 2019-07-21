@@ -63,8 +63,8 @@ public class SqsMessageProducer {
     Worker.set(new Worker(sr));
 
     try {
-      File tempFile = new File(new File("scratch"), sr.getId());
-      File tempFileOut = new File(new File("scratch"), sr.getId() + "-signed.pdf");
+      File tempFile = new File(new File("scratch"), sr.getSigningTx());
+      File tempFileOut = new File(new File("scratch"), sr.getSigningTx() + "-signed.pdf");
 
       // make sure the files are available locally
       try (InputStream is = sr.getFileReference().getContent()) {
@@ -89,8 +89,11 @@ public class SqsMessageProducer {
   private static void check(SignatureRequest sr) {
     LOG.info("Checking " + sr);
     StringBuilder err = new StringBuilder();
-    if (sr.getId() == null) {
-      errAppend(err, "id is null");
+    if (sr.getDocId() == null) {
+      errAppend(err, "docId is null");
+    }
+    if (sr.getSigningTx() == null) {
+      errAppend(err, "signingTx is null");
     }
     if (sr.getFileReference() == null) {
       errAppend(err, "fileReference is null");
