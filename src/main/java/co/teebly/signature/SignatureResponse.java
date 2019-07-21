@@ -24,13 +24,13 @@ public class SignatureResponse extends SignatureRequest {
     this.resultMessage = resultMessage;
   }
 
-  public SignatureResponse(String id, String fullName, String firstName, String lastName,
-      String language, String phoneNumber, String countryCode, String email,
+  public SignatureResponse(String signingTx, String docId, String fullName, String firstName,
+      String lastName, String language, String phoneNumber, String countryCode, String email,
       FileReference fileReference, FileReference fileReferenceSigned,
       FileReference signatureAppearance, String userId, boolean advanced, Result result,
       String resultMessage) {
-    super(id, fullName, firstName, lastName, language, phoneNumber, countryCode, email,
-        fileReference, fileReferenceSigned, signatureAppearance, userId, advanced);
+    super(signingTx, docId, fullName, firstName, lastName, language, phoneNumber, countryCode,
+        email, fileReference, fileReferenceSigned, signatureAppearance, userId, advanced);
     this.result = Objects.requireNonNull(result, "Supplied parameter 'result' is null");
     this.resultMessage = resultMessage;
   }
