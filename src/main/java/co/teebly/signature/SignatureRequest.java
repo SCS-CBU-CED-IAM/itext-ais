@@ -86,7 +86,7 @@ public class SignatureRequest {
       FileReference fileReference, FileReference fileReferenceSigned,
       FileReference signatureAppearance, String userId, boolean advanced) {
     this.signingTx = signingTx;
-    this.docId = signingTx;
+    this.docId = docId;
     this.fullName = fullName;
     this.firstName = firstName;
     this.lastName = lastName;

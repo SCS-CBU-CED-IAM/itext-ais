@@ -102,7 +102,7 @@ public class SqsMessageProducer {
       errAppend(err, "fileReferenceSigned is null");
     }
     if (err.length() > 0) {
-      throw new IllegalArgumentException("Errors in SignatureRequest: ");
+      throw new IllegalArgumentException("Errors in SignatureRequest: " + err);
     }
   }
 
@@ -127,8 +127,9 @@ public class SqsMessageProducer {
         });
     Gson gson = gsonBuilder.create();
     SQS.readInThread(queueName, m -> {
-      System.out.println("Got a message");
-      SignatureRequest sr = gson.fromJson(m.getBody().trim(), SignatureRequest.class);
+      String msgBody = m.getBody().trim();
+      System.out.println("Got a message " + msgBody);
+      SignatureRequest sr = gson.fromJson(msgBody, SignatureRequest.class);
       try {
         process(sr);
         return true;

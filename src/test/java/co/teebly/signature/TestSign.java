@@ -35,7 +35,9 @@ public class TestSign {
         SignatureRequest sr = new SignatureRequest(
                 "sig.request.54321", "docId", "Max Musterman", "Maximilian Rudolph",
                 "Musterman", "en", "447708216475", "GB",
-                "miro@teebly.co", getRef("teebly.pdf"), null, getRef("test.png"),
+                "miro@teebly.co", getRef("Reference_Guide-All-in-Signing-Service-en.pdf"),
+                FileReference.createFileReference(new URI("file:///home/miro/projects/teebly/java/itext-ais/scratch/waffles.pdf")),
+                getRef("test.png"),
                 "theUserId", false);
 
         SqsMessageProducer.process(sr);
