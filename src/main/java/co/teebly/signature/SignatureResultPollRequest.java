@@ -28,13 +28,13 @@ public class SignatureResultPollRequest extends SignatureRequest {
         Objects.requireNonNull(reportHandle, "Supplied parameter 'reportHandle' is null");
   }
 
-  public SignatureResultPollRequest(String id, String fullName, String firstName, String lastName,
-      String language, String phoneNumber, String countryCode, String email,
-      FileReference fileReference, FileReference fileReferenceSigned,
+  public SignatureResultPollRequest(String signingTx, String docId, String fullName,
+      String firstName, String lastName, String language, String phoneNumber, String countryCode,
+      String email, FileReference fileReference, FileReference fileReferenceSigned,
       FileReference signatureAppearance, String userId, boolean advanced, Date timeOut,
       long sleepInterval, String reportHandle) {
-    super(id, fullName, firstName, lastName, language, phoneNumber, countryCode, email,
-        fileReference, fileReferenceSigned, signatureAppearance, userId, advanced);
+    super(signingTx, docId, fullName, firstName, lastName, language, phoneNumber, countryCode,
+        email, fileReference, fileReferenceSigned, signatureAppearance, userId, advanced);
     this.timeOut = Objects.requireNonNull(timeOut, "Supplied parameter 'timeOut' is null");
     this.sleepInterval = sleepInterval;
     this.reportHandle =
