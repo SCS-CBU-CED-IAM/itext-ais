@@ -24,7 +24,7 @@ public class SignatureRequest {
 
   private boolean debug; // Legacy
 
-  private int docId; // Legacy
+  private String docId;
 
   private String email;
 
@@ -35,8 +35,6 @@ public class SignatureRequest {
   private String firstName;
 
   private String fullName;
-
-  private String id;
 
   private String language;
 
@@ -58,6 +56,8 @@ public class SignatureRequest {
 
   private int sigY; // Legacy
 
+  private String signingTx;
+
   private String sourcePdf; // Legacy
 
   private int sourcePdfBucket; // Legacy
@@ -65,7 +65,8 @@ public class SignatureRequest {
   private String userId;
 
   public SignatureRequest(SignatureRequest other) {
-    this.id = other.id;
+    this.signingTx = other.signingTx;
+    this.docId = other.docId;
     this.fullName = other.fullName;
     this.firstName = other.firstName;
     this.lastName = other.lastName;
@@ -80,11 +81,12 @@ public class SignatureRequest {
     this.advanced = other.advanced;
   }
 
-  public SignatureRequest(String id, String fullName, String firstName, String lastName,
-      String language, String phoneNumber, String countryCode, String email,
+  public SignatureRequest(String signingTx, String docId, String fullName, String firstName,
+      String lastName, String language, String phoneNumber, String countryCode, String email,
       FileReference fileReference, FileReference fileReferenceSigned,
       FileReference signatureAppearance, String userId, boolean advanced) {
-    this.id = id;
+    this.signingTx = signingTx;
+    this.docId = signingTx;
     this.fullName = fullName;
     this.firstName = firstName;
     this.lastName = lastName;
@@ -101,6 +103,10 @@ public class SignatureRequest {
 
   public String getCountryCode() {
     return countryCode;
+  }
+
+  public String getDocId() {
+    return docId;
   }
 
   public String getEmail() {
@@ -123,10 +129,6 @@ public class SignatureRequest {
     return fullName;
   }
 
-  public String getId() {
-    return id;
-  }
-
   public String getLanguage() {
     return language;
   }
@@ -143,6 +145,10 @@ public class SignatureRequest {
     return signatureAppearance;
   }
 
+  public String getSigningTx() {
+    return signingTx;
+  }
+
   public String getUserId() {
     return userId;
   }
@@ -157,6 +163,10 @@ public class SignatureRequest {
 
   public void setCountryCode(String countryCode) {
     this.countryCode = countryCode;
+  }
+
+  public void setDocId(String docId) {
+    this.docId = docId;
   }
 
   public void setEmail(String email) {
@@ -179,10 +189,6 @@ public class SignatureRequest {
     this.fullName = fullName;
   }
 
-  public void setId(String id) {
-    this.id = id;
-  }
-
   public void setLanguage(String language) {
     this.language = language;
   }
@@ -197,6 +203,10 @@ public class SignatureRequest {
 
   public void setSignatureAppearance(FileReference signatureAppearance) {
     this.signatureAppearance = signatureAppearance;
+  }
+
+  public void setSigningTx(String signingTx) {
+    this.signingTx = signingTx;
   }
 
   public void setUserId(String userId) {
