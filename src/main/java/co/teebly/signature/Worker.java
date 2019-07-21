@@ -52,15 +52,27 @@ public class Worker {
     }
   }
 
-  public static final String ATTR_PDF_SIGN_USER_ID = "signatures.[0].userId";
+  public static final String ATTR_SIGNATURES = "signatures";
 
-  public static final String ATTR_PDF_SIGN_CONSENT_URL = "signatures.[0].goToUrl";
+  public static final String ATTR_SIGNATURES_CONSENT_URL = "goToUrl";
 
-  public static final String ATTR_PDF_SIGN_STATUS = "signatures.[0].status";
+  private static final String ATTR_SIGNATURES_CONSENT_URL_UPD =
+      ATTR_SIGNATURES + ".$." + ATTR_SIGNATURES_CONSENT_URL;
 
-  public static final String ATTR_PDF_SIGN_STATUS_MESSAGE = "signatures.[0].message";
+  public static final String ATTR_SIGNATURES_STATUS = "status";
 
-  public static final String ATTR_PDF_SIGN_STATUS_TS = "signatures.[0].timestamp";
+  private static final String ATTR_SIGNATURES_STATUS_UPD =
+      ATTR_SIGNATURES + ".$." + ATTR_SIGNATURES_STATUS;
+
+  public static final String ATTR_SIGNATURES_STATUS_TS = "timestamp";
+
+  private static final String ATTR_SIGNATURES_STATUS_TS_UPD =
+      ATTR_SIGNATURES + ".$." + ATTR_SIGNATURES_STATUS_TS;
+
+  public static final String ATTR_SIGNATURES_USER_ID = "userId";
+
+  private static final String ATTR_SIGNATURES_USER_ID_MATCH =
+      ATTR_SIGNATURES + "." + ATTR_SIGNATURES_USER_ID;
 
   private static final Logger LOG = LoggerFactory.getLogger(Worker.class);
 
@@ -90,13 +102,16 @@ public class Worker {
     this.signatureRequest =
         Objects.requireNonNull(signatureRequest, "Supplied parameter 'signatureRequest' is empty");
     readImageBytes();
-    filter = Filters.eq(DBCollection.ID_FIELD_NAME, signatureRequest.getId());
+    filter = Filters.and( //
+        Filters.eq(DBCollection.ID_FIELD_NAME, signatureRequest.getDocId()), //
+        Filters.eq(ATTR_SIGNATURES_USER_ID_MATCH, signatureRequest.getUserId()) //
+    );
     mongoCfg = TeeblyMongoDatabase.create(TeeblyMongoSubsystem.TEEBLY);
   }
 
   public void addConsentUrl(String consentUrl) {
     Document updates = mongoCreateUpdates(PdfSignStatus.GOT_CONSENT_URL, "Updated consent URL");
-    updates.put(ATTR_PDF_SIGN_CONSENT_URL, consentUrl);
+    updates.put(ATTR_SIGNATURES_CONSENT_URL_UPD, consentUrl);
     mongoUpdate(updates);
   }
 
@@ -110,12 +125,8 @@ public class Worker {
 
   private Document mongoCreateUpdates(PdfSignStatus pdfSignStatus, String pdfSignStatusMessage) {
     Document ret = new Document();
-    ret.put(ATTR_PDF_SIGN_STATUS, pdfSignStatus.getXmlValue());
-    ret.put(ATTR_PDF_SIGN_STATUS_TS, new Date());
-    // ret.put(ATTR_PDF_SIGN_STATUS_MESSAGE, pdfSignStatusMessage);
-    if (signatureRequest.getUserId() != null) {
-      ret.put(ATTR_PDF_SIGN_USER_ID, signatureRequest.getUserId());
-    }
+    ret.put(ATTR_SIGNATURES_STATUS_UPD, pdfSignStatus.getXmlValue());
+    ret.put(ATTR_SIGNATURES_STATUS_TS_UPD, new Date());
     return ret;
   }
 
@@ -123,7 +134,11 @@ public class Worker {
     Document update = new Document("$set", updates);
     MongoCollection<Document> col =
         mongoCfg.getCollection(MongoTeeblyCollection.TEEBLY_DOC.getName());
-    col.findOneAndUpdate(filter, update);
+    Document res = col.findOneAndUpdate(filter, update);
+    if (res == null) {
+      throw new IllegalStateException("This is a bug. No updates were done using filter='" + filter
+          + "' and updates='" + updates + "'");
+    }
   }
 
   private void readImageBytes() throws IOException {
@@ -134,35 +149,35 @@ public class Worker {
   }
 
   public void setAppliedSignature() {
-    LOG.info("Applied signature for " + signatureRequest.getId());
+    LOG.info("Applied signature for " + signatureRequest.getDocId());
     mongoUpdate(mongoCreateUpdates(PdfSignStatus.APPLIED_SIGNATURE, "Applied signature"));
   }
 
   public void setGotSignature() {
-    LOG.info("Got signature for " + signatureRequest.getId());
+    LOG.info("Got signature for " + signatureRequest.getDocId());
     mongoUpdate(mongoCreateUpdates(PdfSignStatus.GOT_SIGNATURE, "Got signature"));
   }
 
   public void setRequestId(String requestId) {
-    LOG.info("Request-Id for " + signatureRequest.getId() + ": " + requestId);
+    LOG.info("Request-Id for " + signatureRequest.getDocId() + ": " + requestId);
   }
 
   public void setTransactionId(String transactionId) {
-    LOG.info("Transaction-Id for " + signatureRequest.getId() + ": " + transactionId);
+    LOG.info("Transaction-Id for " + signatureRequest.getDocId() + ": " + transactionId);
   }
 
   public void uploadSignedPdf(File file) throws IOException {
 
-    LOG.info("Applied signature for " + signatureRequest.getId());
+    LOG.info("Applied signature for " + signatureRequest.getDocId());
     mongoUpdate(mongoCreateUpdates(PdfSignStatus.APPLIED_SIGNATURE, "Applied signature"));
 
-    LOG.info("Uploading signed PDF for " + signatureRequest.getId() + " to "
+    LOG.info("Uploading signed PDF for " + signatureRequest.getDocId() + " to "
         + signatureRequest.getFileReferenceSigned());
     try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
       signatureRequest.getFileReferenceSigned().writeContent(is);
     }
 
-    LOG.info("Uploaded signed PDF for " + signatureRequest.getId() + " to "
+    LOG.info("Uploaded signed PDF for " + signatureRequest.getDocId() + " to "
         + signatureRequest.getFileReferenceSigned());
     mongoUpdate(mongoCreateUpdates(PdfSignStatus.FINISHED_OK,
         "Uploaded signed PDF to " + signatureRequest.getFileReferenceSigned()));
