@@ -5,7 +5,10 @@ import static org.junit.Assume.assumeTrue;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import org.bson.Document;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -90,14 +93,10 @@ public class ModuleTest {
 
     UX.rm_f(T01_PDF_OUT_FILE);
 
-    String id = new EventId().toString();
-    MongoCollection<Document> col =
-        testContext.getTeeblyDatabase().getCollection(MongoTeeblyCollection.TEEBLY_DOC.getName());
-    Document document = new Document(DBCollection.ID_FIELD_NAME, id);
-    col.insertOne(document);
-
+    // Setup SignatureRequest
     SignatureRequest sr = new SignatureRequest( //
-        id, //
+        new EventId().toString(), //
+        new EventId().toString(), //
         "Max Musterman", //
         "Maximilian Rudolph", //
         "Musterman", //
@@ -111,12 +110,25 @@ public class ModuleTest {
         "theUserId", //
         false //
     );
-    // WorkQueue.register(sr);
+
+    // Create document on the DB
+    Document document = new Document(DBCollection.ID_FIELD_NAME, sr.getDocId());
+    List<Document> signatures = new ArrayList<>();
+    document.put(Worker.ATTR_SIGNATURES, signatures);
+    Document signature = new Document(Worker.ATTR_SIGNATURES_USER_ID, sr.getUserId());
+    signatures.add(signature);
+    signature.put(Worker.ATTR_SIGNATURES_STATUS,
+        Worker.PdfSignStatus.SIGN_PROCESS_STARTED.getXmlValue());
+    signature.put(Worker.ATTR_SIGNATURES_STATUS_TS, new Date());
+    LOG.info("Insertin into DB: " + document);
+    MongoCollection<Document> col =
+        testContext.getTeeblyDatabase().getCollection(MongoTeeblyCollection.TEEBLY_DOC.getName());
+    col.insertOne(document);
+
+    // Register SignatureRequest
     Worker.set(new Worker(sr));
 
     String[] args = SqsMessageProducer.prepareArgs(sr, T01_PDF_IN_FILE, T01_PDF_OUT_FILE);
-
-    LOG.info("PASS: " + Arrays.asList(args));
 
     SignPDF ais = new SignPDF();
     ais.runSigning(args);
