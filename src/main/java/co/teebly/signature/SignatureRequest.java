@@ -22,8 +22,6 @@ public class SignatureRequest {
 
   private String countryCode;
 
-  private boolean debug; // Legacy
-
   private String docId;
 
   private String email;
@@ -40,27 +38,20 @@ public class SignatureRequest {
 
   private String lastName;
 
-  private int page; // Legacy
+  private int page;
 
   private String phoneNumber;
 
   private FileReference signatureAppearance;
 
-  private int signBucket; // Legacy
+  private int sigWidth;
 
-  private int signFile; // Legacy
+  private int sigX;
 
-  private int sigWidth; // Legacy
-
-  private int sigX; // Legacy
-
-  private int sigY; // Legacy
+  private int sigY;
 
   private String signingTx;
 
-  private String sourcePdf; // Legacy
-
-  private int sourcePdfBucket; // Legacy
 
   private String userId;
 
@@ -99,6 +90,38 @@ public class SignatureRequest {
     this.signatureAppearance = signatureAppearance;
     this.userId = userId;
     this.advanced = advanced;
+  }
+
+  public int getPage() {
+    return page;
+  }
+
+  public void setPage(int page) {
+    this.page = page;
+  }
+
+  public int getSigX() {
+    return sigX;
+  }
+
+  public void setSigX(int sigX) {
+    this.sigX = sigX;
+  }
+
+  public int getSigY() {
+    return sigY;
+  }
+
+  public void setSigY(int sigY) {
+    this.sigY = sigY;
+  }
+
+  public int getSigWidth() {
+    return sigWidth;
+  }
+
+  public void setSigWidth(int sigWidth) {
+    this.sigWidth = sigWidth;
   }
 
   public String getCountryCode() {

@@ -22,6 +22,7 @@
 
 package com.swisscom.ais.itext;
 
+import co.teebly.signature.SignatureRequest;
 import co.teebly.signature.Worker;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Rectangle;
@@ -162,12 +163,22 @@ public class PDF {
         pdfSignature.setContact(signContact);
         pdfSignature.setDate(new PdfDate(signDate));
         pdfSignatureAppearance.setCryptoDictionary(pdfSignature);
-		// TODO scale image like in the older lambda code
 		byte[] image = Worker.get().getImageBytes();
 		if (image != null) {
-			pdfSignatureAppearance.setImage(Image.getInstance(image));
-			// TODO configurable rect coords and page number like in older lambda
-			Rectangle signRect = new Rectangle(100, 750, 200, 850);
+			SignatureRequest sr = Worker.get().getSignatureRequest();
+			Image signImage = Image.getInstance(image);
+			int signPageNum = sr.getPage();
+			Rectangle pageSize = pdfReader.getPageSizeWithRotation(signPageNum);
+			float pageH = pageSize.getHeight();
+			float signScalePercent = sr.getSigWidth() / signImage.getWidth() * 100;
+			signImage.scalePercent(signScalePercent);
+			pdfSignatureAppearance.setImage(signImage);
+			int signX = sr.getSigX();
+			int signY = sr.getSigY();
+			Rectangle signRect = new Rectangle(signX,
+					pageH - signY - signImage.getScaledHeight(),
+					signX + signImage.getScaledWidth(),
+					pageH - signY);
 			pdfSignatureAppearance.setVisibleSignature(signRect, 1, null);
 			pdfSignatureAppearance.setLayer4Text("Verified by Teebly");
 			pdfSignatureAppearance.setLayer2Text("");
