@@ -26,6 +26,7 @@ public class MessagesTest {
         .createFileReference(new URI("file:///some/dir/some-file-signature-appearance.png"));
     return new SignatureRequest( //
         "sig.request.54321", //
+        "docId", //
         "Max Musterman", //
         "Maximilian Rudolph", //
         "Musterman", //
