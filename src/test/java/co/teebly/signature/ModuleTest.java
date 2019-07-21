@@ -6,7 +6,6 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.bson.Document;
@@ -19,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.DBCollection;
 import com.mongodb.client.MongoCollection;
 import com.swisscom.ais.itext.SignPDF;
-import co.teebly.tor.MongoTeeblyCollection;
 import co.teebly.utils.UX;
 import co.teebly.utils.files.FileReference;
 import co.teebly.utils.id.EventId;
@@ -120,9 +118,9 @@ public class ModuleTest {
     signature.put(Worker.ATTR_SIGNATURES_STATUS,
         Worker.PdfSignStatus.SIGN_PROCESS_STARTED.getXmlValue());
     signature.put(Worker.ATTR_SIGNATURES_STATUS_TS, new Date());
-    LOG.info("Insertin into DB: " + document);
+    LOG.info("Inserting into DB: " + document);
     MongoCollection<Document> col =
-        testContext.getTeeblyDatabase().getCollection(MongoTeeblyCollection.TEEBLY_DOC.getName());
+        testContext.getTeeblyDatabase().getCollection(Worker.DB_COLLECTION_NAME);
     col.insertOne(document);
 
     // Register SignatureRequest

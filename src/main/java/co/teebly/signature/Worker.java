@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.DBCollection;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
-import co.teebly.tor.MongoTeeblyCollection;
 import co.teebly.utils.mongo.TeeblyMongoDatabase;
 import co.teebly.utils.mongo.TeeblyMongoSubsystem;
 
@@ -51,6 +50,8 @@ public class Worker {
       return xmlValue;
     }
   }
+
+  public static final String DB_COLLECTION_NAME = "documents";
 
   public static final String ATTR_SIGNATURES = "signatures";
 
@@ -133,7 +134,7 @@ public class Worker {
   private void mongoUpdate(Document updates) {
     Document update = new Document("$set", updates);
     MongoCollection<Document> col =
-        mongoCfg.getCollection(MongoTeeblyCollection.TEEBLY_DOC.getName());
+        mongoCfg.getCollection(DB_COLLECTION_NAME);
     Document res = col.findOneAndUpdate(filter, update);
     if (res == null) {
       throw new IllegalStateException("This is a bug. No updates were done using filter='" + filter

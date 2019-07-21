@@ -39,8 +39,8 @@
         </dependency>
         <dependency>
             <groupId>co.teebly</groupId>
-            <artifactId>tor</artifactId>
-            <version>0.0.27-SNAPSHOT</version>
+            <artifactId>jutils</artifactId>
+            <version>0.0.28-SNAPSHOT</version>
         </dependency>
         <!--SOAP we removed in Java 11 core-->
         <dependency>
