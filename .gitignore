@@ -16,7 +16,7 @@ Thumbs.db
 ###################
 *~
 *.kjs
-*.pdf
+#*.pdf
 *.p12
 *.p7s
 run.sh
@@ -29,3 +29,10 @@ mycert-preprod*
 .idea/*
 *.iml
 
+/.classpath
+/.project
+/.settings
+/bin
+/target
+/_mycert.crt
+/_mycert.key

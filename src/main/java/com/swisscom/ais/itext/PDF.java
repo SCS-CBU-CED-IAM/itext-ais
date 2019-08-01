@@ -22,6 +22,10 @@
 
 package com.swisscom.ais.itext;
 
+import co.teebly.signature.SignatureRequest;
+import co.teebly.signature.Worker;
+import com.itextpdf.text.Image;
+import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.*;
 import com.itextpdf.text.pdf.codec.Base64;
 import com.itextpdf.text.pdf.security.*;
@@ -142,7 +146,7 @@ public class PDF {
      * @return Hash of pdf as bytes
      * @throws Exception 
      */
-    public byte[] getPdfHash(@Nonnull Calendar signDate, int estimatedSize, @Nonnull String hashAlgorithm, boolean isTimestampOnly)
+    public byte[] getPdfHash(@Nonnull Calendar signDate, int estimatedSize, @Nonnull String hashAlgorithm, boolean isTimestampOnly, String transactionId)
             throws Exception {
 
         pdfReader = new PdfReader(inputFilePath, pdfPassword != null ? pdfPassword.getBytes() : null);
@@ -159,7 +163,27 @@ public class PDF {
         pdfSignature.setContact(signContact);
         pdfSignature.setDate(new PdfDate(signDate));
         pdfSignatureAppearance.setCryptoDictionary(pdfSignature);
-        
+		byte[] image = Worker.get().getImageBytes();
+		if (image != null) {
+			SignatureRequest sr = Worker.get().getSignatureRequest();
+			Image signImage = Image.getInstance(image);
+			int signPageNum = sr.getPage();
+			Rectangle pageSize = pdfReader.getPageSizeWithRotation(signPageNum);
+			float pageH = pageSize.getHeight();
+			float signScalePercent = sr.getSigWidth() / signImage.getWidth() * 100;
+			signImage.scalePercent(signScalePercent);
+			pdfSignatureAppearance.setImage(signImage);
+			int signX = sr.getSigX();
+			int signY = sr.getSigY();
+			Rectangle signRect = new Rectangle(signX,
+					pageH - signY - signImage.getScaledHeight(),
+					signX + signImage.getScaledWidth(),
+					pageH - signY);
+			pdfSignatureAppearance.setVisibleSignature(signRect, 1, null);
+			pdfSignatureAppearance.setLayer4Text("Verified by Teebly");
+			pdfSignatureAppearance.setLayer2Text("");
+		}
+
 		// certify the pdf, if requested
 		if (certificationLevel > 0) {
 			// check: at most one certification per pdf is allowed
@@ -168,8 +192,8 @@ public class PDF {
 			pdfSignatureAppearance.setCertificationLevel(certificationLevel);        		 		
         }
         	
-        HashMap<PdfName, Integer> exc = new HashMap<PdfName, Integer>();
-        exc.put(PdfName.CONTENTS, new Integer(estimatedSize * 2 + 2));
+        HashMap<PdfName, Integer> exc = new HashMap<>();
+        exc.put(PdfName.CONTENTS, estimatedSize * 2 + 2);
 
         pdfSignatureAppearance.preClose(exc);
 

@@ -1,0 +1,61 @@
+version: 2
+jobs:
+  build-job:
+    docker:
+      - image: circleci/openjdk:10-jdk-browsers
+
+    steps:
+      - checkout
+
+      - run:
+          name: Setup Environment Variables
+          command: |
+            export PROJECT=$CIRCLE_PROJECT_REPONAME
+            export GIT_SHA=$CIRCLE_SHA1
+            export GIT_MSG="$(git log --format=%s -n1 $GIT_SHA | tr '"' "'")"
+            export VERSION=$(date -u +"%Y%m%d%H%M%S")-${GIT_SHA:0:14}
+            printf "$PROJECT $VERSION\n$GIT_SHA\n$GIT_MSG\n"
+            printf "Setting environments for containers:\n"
+            env | sort | while read -r assignment; do
+              lvalue=${assignment%%=*}
+              rvalue=${assignment#*=}
+              printf "  $lvalue=\"$rvalue\"\n"
+              printf "export $lvalue=\"$rvalue\"\n" >> $BASH_ENV
+            done
+
+      - restore_cache:
+          key: $CIRCLE_PROJECT_REPONAME-{{ checksum "pom.xml" }}
+
+      - run: mvn dependency:go-offline
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: $CIRCLE_PROJECT_REPONAME-{{ checksum "pom.xml" }}
+
+      - run: echo "<settings> <servers> <server> <id>teebly-maven-repo</id> <username>$AWS_ACCESS_KEY_ID</username> <password>$AWS_SECRET_ACCESS_KEY</password> </server> </servers> </settings> " > ~/.m2/settings.xml
+
+      - run: mvn clean package  -Dmaven.test.skip=true
+      - setup_remote_docker
+      - run: docker build --rm=false -t teebly/$CIRCLE_PROJECT_REPONAME:latest .
+      - run: docker build --rm=false -t teebly/$CIRCLE_PROJECT_REPONAME:$VERSION .
+
+      - run:
+          name: Push Container
+          command: |
+            echo $CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_USERNAME $CIRCLE_BRANCH
+            if [ $CIRCLE_PROJECT_USERNAME == Teebly ] && [ $CIRCLE_BRANCH == master ]; then
+              docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+              docker push teebly/$CIRCLE_PROJECT_REPONAME:$VERSION
+              docker push teebly/$CIRCLE_PROJECT_REPONAME:latest
+            fi
+
+      - store_test_results:
+          path: target/surefire-reports
+
+workflows:
+  version: 2
+  build-workflow:
+    jobs:
+      - build-job:
+          context: mvn-s3-deploy
