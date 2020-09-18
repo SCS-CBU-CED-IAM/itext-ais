@@ -153,7 +153,10 @@ public class PDF {
         pdfStamper.setXmpMetadata(pdfReader.getMetadata());
 
         pdfSignatureAppearance = pdfStamper.getSignatureAppearance();
-        pdfSignature = new PdfSignature(PdfName.ADOBE_PPKLITE, isTimestampOnly ? PdfName.ETSI_RFC3161 : PdfName.ADBE_PKCS7_DETACHED);
+        // Use "ETSI_CADES_DETACHED" as subfilter for PAdES level B-LT compliance
+        //pdfSignature = new PdfSignature(PdfName.ADOBE_PPKLITE, isTimestampOnly ? PdfName.ETSI_RFC3161 : PdfName.ADBE_PKCS7_DETACHED);
+        pdfSignature = new PdfSignature(PdfName.ADOBE_PPKLITE, isTimestampOnly ? PdfName.ETSI_RFC3161 : PdfName.ETSI_CADES_DETACHED);
+        
         pdfSignature.setReason(signReason);
         pdfSignature.setLocation(signLocation);
         pdfSignature.setContact(signContact);
