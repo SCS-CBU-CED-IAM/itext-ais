@@ -1,3 +1,6 @@
+# Migrated to: https://github.com/SwisscomTrustServices/itext-ais-2
+Please use only this repository.
+
 AIS: iText
 ============
 
